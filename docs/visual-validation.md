@@ -68,3 +68,20 @@ At a 1510 × 965 logical Studio viewport, all 12 block/inline-block rectangles m
 The original nine-scene reference was also recaptured: all 26 rectangles still matched within 0.0001px. Those fixtures now explicitly request flex-column stacks, block underline text, and a 20px spacer in the flex example so their reference does not depend on the former block defaults for inline tags.
 
 `Tests.Layout.Verify()` additionally checks parent resizing without a React update, native text invalidation, auto-margin centering, Inline/InlineBlock/None transitions, dimensions/constraints, native TextScaled, and fragment backgrounds. All 64 stories and the gallery mounted; selective React-render tests still passed. These checks used Edit mode, temporary StarterGuis with `ScreenInsets.None`, and the existing LandscapeSensor orientation. No device-simulator settings were changed; temporary instances were removed afterward. This is a tested subset at two widths, not a guarantee for arbitrary imported HTML.
+
+## Markup, table and React comparison — 2026-11-06
+
+`tests/visual/MarkupFixtures.luau` contains the shared XML-style fragment and CSS. `tests/roblox/Markup.luau` independently constructs equivalent PascalCase table nodes and ordinary React components. Its six panes compare all three inputs at 300px and 220px widths, including nested bold/italic, underline plus strike-through, escaped literal tags, multi-line highlights, Br, and independently sized Strong/Em boxes.
+
+```sh
+lune run scripts/markup-reference
+python scripts/capture-markup.py --font-directory PATH_TO_ROBLOX/content/fonts --device-scale 1.75
+```
+
+Mount `React.createElement(require(game.ReplicatedStorage.Tests.Markup).View, {})` using the Studio procedure above. The 1008 × 744 board starts at the viewport origin; the UI Labs story centers it under **HTML Components → Content**. Save the screenshot as `build/visual/markup-studio.jpg`. Record named descendants (`Card`, `Copy`, `Strong`, `Em`, `Underline`, `Both`, `Literal`, `Mark`, `Boxes`, `Badge`, `Sized`) for each `Pane11` through `Pane23` using the same `{ Records, Viewport }` shape as the flow comparison. Save to `markup-studio.json`, then run `python scripts/compare-markup.py`.
+
+The current Studio capture uses a 1510 × 965 logical viewport, ScreenInsets.None, and the existing LandscapeSensor orientation. The 30 block/inline-block rectangles agree with Chromium within **1px for size and vertical position**, and **1.891px horizontally**. Text advances shift the second inline box slightly; the comparison bounds horizontal error separately at 3px. Inline text-root unions remain a separate measurement, with a largest difference of **9.594px**. Paragraph heights, wrapping, literal entity text, nested decorations and all three Roblox representations agree in the inspected screenshots. Bold italic is retained in the fixture; browser/engine glyph rasterization is not pixel-identical.
+
+The comparison exposed a baseline bug when a tall bottom-aligned box shared a line with a middle-aligned badge. Flow now extends the line above the baseline for bottom alignment and below it for top alignment; two pure regression cases cover the correction. The final screenshot is `build/visual/markup-comparison.png`; `markup-comparison.json` retains all 66 rectangle differences rather than hiding text differences.
+
+`Tests.Markup.Verify()` checks geometry equivalence among the three input paths, native refs and independent dimensions, nested RichText fragments, malformed-source cleanup, anonymous text avoiding Span selectors, direct-child selector ancestry, and stylesheet changes against stable parsed content. All five Studio suites passed, including 65 stories and the gallery, with no warnings or errors during the final run. The checks used an isolated copy of the current modules to avoid Studio's cached requires; temporary instances were removed afterward. CLI checks and the installed VS Code LSP both passed. CI runs parser/table and layout regressions plus package checks; screenshot capture still requires local Studio.

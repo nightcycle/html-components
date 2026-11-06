@@ -3,6 +3,7 @@
 -- Packages
 -- Modules
 local CSS = require(script.Parent.Parent.Parent.CSS)
+local Decoration = require(script.Parent.Parent.Render.Decoration)
 -- Components
 -- Hooks
 -- Contexts
@@ -13,6 +14,7 @@ export type Input = {
 	Defaults: Types.Style?,
 	Inline: Types.Style?,
 	Sheets: { Types.StyleSheet }?,
+	Text: boolean?,
 }
 export type Snapshot = { Style: Types.Style, Context: Types.StyleContext }
 export type Listener = () -> ()
@@ -93,14 +95,23 @@ end
 local function resolve(parent: Snapshot, input: Input, previous: Snapshot?): Snapshot
 	local context = parent.Context
 	local sheets, ancestors, inherited = context.Sheets, context.Ancestors, context.Inherited
+	local decoration: Types.TextDecoration? = context.Decoration
 	local style = EMPTY_STYLE
 	if input.Node then
-		style = table.freeze(
-			CSS.resolve(sheets, input.Node, ancestors, inherited, input.Defaults or EMPTY_STYLE, input.Inline)
+		style = CSS.resolve(sheets, input.Node, ancestors, inherited, input.Defaults or EMPTY_STYLE, input.Inline)
+		style.TextDecoration = Decoration.combine(
+			if style.Display == "InlineBlock" or style.Display == "InlineFlex" then nil else decoration,
+			style.TextDecoration
 		)
+		decoration = style.TextDecoration
+		table.freeze(style)
 		ancestors = table.clone(ancestors)
 		table.insert(ancestors, input.Node)
 		inherited = CSS.inherited(style)
+	elseif input.Text then
+		style = table.clone(inherited)
+		style.Display, style.TextDecoration = "Inline", decoration
+		table.freeze(style)
 	elseif input.Sheets and #input.Sheets > 0 then
 		sheets = table.clone(sheets)
 		for _, sheet in input.Sheets do
@@ -113,11 +124,19 @@ local function resolve(parent: Snapshot, input: Input, previous: Snapshot?): Sna
 		sheets = if equalArray(sheets, old.Sheets) then old.Sheets else sheets
 		ancestors = if equalAncestors(ancestors, old.Ancestors) then old.Ancestors else ancestors
 		inherited = if StyleStore.equal(inherited, old.Inherited) then old.Inherited else inherited
-		if sheets == old.Sheets and ancestors == old.Ancestors and inherited == old.Inherited then
+		if
+			sheets == old.Sheets
+			and ancestors == old.Ancestors
+			and inherited == old.Inherited
+			and decoration == old.Decoration
+		then
 			return if style == previous.Style then previous else { Style = style, Context = old }
 		end
 	end
-	return { Style = style, Context = { Sheets = sheets, Ancestors = ancestors, Inherited = inherited } }
+	return {
+		Style = style,
+		Context = { Sheets = sheets, Ancestors = ancestors, Inherited = inherited, Decoration = decoration },
+	}
 end
 
 local function subscribe(listeners: { [Listener]: boolean }, listener: Listener): Disconnect

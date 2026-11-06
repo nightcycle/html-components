@@ -18,4 +18,7 @@ local _stringCSS: HTML.StyleProviderProperties = { CSS = "Button { color: red; }
 local _style: HTML.Style = {}
 _style.fontSize = 16 -- EXPECT_ERROR
 local _lowercaseValue: HTML.StyleMap = { Button = { FontWeight = "bold" } } -- EXPECT_ERROR
+local _contentTag: HTML.ContentTag = "strong" -- EXPECT_ERROR
+local _contentNode: HTML.ContentElement = { Tag = "Strong", CSS = { FontSize = "large" } } -- EXPECT_ERROR
+HTML.Content({}) -- EXPECT_ERROR
 return {}

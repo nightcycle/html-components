@@ -13,7 +13,7 @@ export type FontFamily = "SansSerif" | "Serif" | "Monospace"
 export type FontWeight = "Normal" | "Bold"
 export type FontStyle = "Normal" | "Italic"
 export type TextAlign = "Left" | "Center" | "Right"
-export type TextDecoration = "None" | "Underline" | "LineThrough"
+export type TextDecoration = "None" | "Underline" | "LineThrough" | "UnderlineLineThrough"
 export type WhiteSpace = "Normal" | "Pre" | "PreWrap" | "Nowrap"
 export type Overflow = "Visible" | "Hidden"
 export type SelectorRelation = "Descendant" | "Child"
@@ -92,7 +92,54 @@ export type Selector = { Parts: { SelectorPart }, Specificity: Specificity }
 export type Rule = { Selector: Selector, Style: Style, Important: Style }
 export type StyleMap = { [string]: Style }
 export type StyleSheet = { Rules: { Rule }, Diagnostics: { Diagnostic } }
-export type StyleContext = { Sheets: { StyleSheet }, Ancestors: { Node }, Inherited: Style }
+export type StyleContext =
+	{ Sheets: { StyleSheet }, Ancestors: { Node }, Inherited: Style, Decoration: TextDecoration? }
+
+export type ContentTag =
+	"Div"
+	| "P"
+	| "Span"
+	| "Strong"
+	| "B"
+	| "Em"
+	| "I"
+	| "U"
+	| "S"
+	| "Del"
+	| "Ins"
+	| "Code"
+	| "Kbd"
+	| "Samp"
+	| "Small"
+	| "Mark"
+	| "Abbr"
+	| "Time"
+	| "Output"
+	| "Q"
+	| "Cite"
+	| "Var"
+	| "Label"
+	| "Br"
+export type ContentElement = {
+	Tag: ContentTag,
+	Id: string?,
+	ClassName: string?,
+	CSS: Style?,
+	Text: string?,
+	Children: { ContentNode }?,
+	Ref: React.Ref<GuiObject>?,
+}
+export type ContentNode = string | ContentElement
+export type ContentSource = string | { ContentNode }
+export type SourceLocation = { Offset: number, Line: number, Column: number }
+export type MarkupDiagnostic = { Message: string, Source: string, Location: SourceLocation, Path: string? }
+export type MarkupResult = { Success: boolean, Nodes: { ContentNode }, Diagnostics: { MarkupDiagnostic } }
+export type ContentProperties = {
+	Source: ContentSource,
+	OrderOffset: number?,
+	OnDiagnostics: (({ MarkupDiagnostic }) -> ())?,
+}
+export type DeclarationResult = { Style: Style, Important: Style, Diagnostics: { Diagnostic } }
 
 export type Common = {
 	Id: string?,

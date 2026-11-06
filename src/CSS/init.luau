@@ -61,6 +61,30 @@ for _, property in properties do
 end
 
 local function declaration(name: string, value: string): Types.Style?
+	if name == "text-decoration" then
+		local underline, strike = false, false
+		if value == "none" then
+			return { TextDecoration = "None" }
+		end
+		for token in value:gmatch("%S+") do
+			if token == "underline" then
+				underline = true
+			elseif token == "line-through" then
+				strike = true
+			else
+				return nil
+			end
+		end
+		if not underline and not strike then
+			return nil
+		end
+		return {
+			TextDecoration = if underline and strike
+				then "UnderlineLineThrough"
+				elseif underline then "Underline"
+				else "LineThrough",
+		}
+	end
 	if name == "line-height" then
 		if value == "normal" then
 			return { LineHeight = "Normal" }
@@ -119,9 +143,7 @@ local function declaration(name: string, value: string): Types.Style?
 			if value ~= "auto" or (name ~= "width" and name ~= "height" and not name:match("^margin%-")) then
 				return nil
 			end
-			if name:match("^margin%-") then
-				parsed = "Auto"
-			end
+			parsed = "Auto"
 		elseif not name:match("^margin%-") and (length.Scale < 0 or length.Offset < 0) then
 			return nil
 		end
@@ -173,6 +195,77 @@ local function parseDeclarations(source: string, diagnostics: { Types.Diagnostic
 		end
 	end
 	return normal, important
+end
+
+function CSS.declarations(source: string): Types.DeclarationResult
+	local diagnostics: { Types.Diagnostic } = {}
+	local style, important = parseDeclarations(source, diagnostics)
+	return { Style = style, Important = important, Diagnostics = diagnostics }
+end
+
+function CSS.validate(source: unknown): Types.DeclarationResult
+	local result: Types.DeclarationResult = { Style = {}, Important = {}, Diagnostics = {} }
+	if type(source) ~= "table" then
+		table.insert(result.Diagnostics, { Message = "CSS must be a PascalCase style table", Source = "CSS" })
+		return result
+	end
+	local output = (result.Style :: unknown) :: { [string]: unknown }
+	for key, value in source :: { [unknown]: unknown } do
+		local property: Property? = nil
+		if type(key) == "string" then
+			for _, candidate in properties do
+				if candidate.Key == key then
+					property = candidate
+					break
+				end
+			end
+		end
+		local valid = false
+		local autoDimension = key == "Width" or key == "Height"
+		local finite = type(value) == "number" and value == value and math.abs(value) < math.huge
+		if property and property.Kind == "option" and type(value) == "string" then
+			local allowed: { string } = property.Allowed or {}
+			for _, option in allowed do
+				if value == Values.pascal(option) then
+					valid = true
+				end
+			end
+		elseif property and property.Kind == "color" and type(value) == "string" then
+			valid = Values.color(value) ~= nil
+		elseif property and (property.Kind == "pixels" or property.Kind == "integer") then
+			valid = finite
+				and (if property.Kind == "pixels" then (value :: number) >= 0 else (value :: number) % 1 == 0)
+		elseif
+			(property and property.Kind == "length")
+			or key == "Padding"
+			or key == "Margin"
+			or key == "BorderRadius"
+		then
+			local length = if type(value) == "string" or type(value) == "number" then Values.length(value) else nil
+			local margin = type(key) == "string" and key:sub(1, 6) == "Margin"
+			valid = length ~= nil and (margin or (length.Scale >= 0 and length.Offset >= 0))
+			if (autoDimension or margin) and (value == "Auto" or value == "auto") then
+				valid = true
+			end
+		elseif key == "LineHeight" then
+			local pixels = if type(value) == "string" and value:match("px$") then Values.pixels(value) else nil
+			valid = (finite and (value :: number) >= 0) or value == "Normal" or (pixels ~= nil and pixels >= 0)
+		elseif key == "BoxShadow" and type(value) == "string" then
+			valid = value == "none" or Values.shadow(value) ~= nil
+		end
+		if key == "TextDecoration" and value == "UnderlineLineThrough" then
+			valid = true
+		end
+		if valid and type(key) == "string" then
+			output[key] = value
+		else
+			table.insert(
+				result.Diagnostics,
+				{ Message = `Unsupported or invalid style field: {tostring(key)}`, Source = tostring(key) }
+			)
+		end
+	end
+	return result
 end
 
 function CSS.parse(source: string): Types.StyleSheet

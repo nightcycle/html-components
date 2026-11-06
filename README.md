@@ -2,7 +2,7 @@
 
 62 strictly typed React Luau components that map an explicit HTML/CSS subset to native Roblox UI. Includes contextual CSS, individual corners, native shadows, UI Labs stories, and a searchable development gallery.
 
-This is a component foundation for an HTML importer. It does **not** parse HTML markup or implement a browser DOM. See [the compatibility contract](docs/compatibility.md) before translating web content.
+Includes an XML-style fragment parser and a typed table input for mixed text. This is a foundation for an HTML importer, with an explicit supported subset rather than HTML5 error recovery or a browser DOM. See [the compatibility contract](docs/compatibility.md) before translating web content.
 
 ## Install
 
@@ -56,7 +56,7 @@ end
 Following `open-shl`, components expose a `Properties` type, return a React element, and construct their host with the typed instance builders. Every component's properties are exported from the public Wally header as `ComponentNameProperties`: for example, `HTML.DivProperties`, `HTML.H2Properties`, `HTML.TextareaProperties`, and `HTML.StyleProviderProperties`. The shared host-family properties remain available too. Consumers never need to index a Wally submodule for types.
 
 - Components and tag identifiers use PascalCase (`HTML.Div`, `HTML.Tags.Div`, `HTML.Tags.H1`, `HTML.Textarea`). `HTML.Tag` is the exported tag union. `HTML.Catalog` lists PascalCase tags, component names, and renderer kinds. Raw CSS selectors retain normal HTML syntax (`div`, `h1`) and normalize during parsing.
-- HTML-facing props are `Id`, `ClassName`, `CSS`, `Hidden`, `Text`, `Src`, `Href`, `Value`, and the control-specific props below. A future parser must normalize lowercase HTML attributes into this API.
+- HTML-facing props are `Id`, `ClassName`, `CSS`, `Hidden`, `Text`, `Src`, `Href`, `Value`, and the control-specific props below. The fragment parser normalizes supported lowercase HTML attributes into this API.
 - `CSS` is a typed inline `HTML.Style` record. It is named separately from Roblox's native `Frame.Style`/`TextButton.Style` enum property.
 - Style fields and option values use PascalCase: `{ FontSize = 16, Display = "Flex", JustifyContent = "SpaceBetween" }`. Every string union has its own public type, including `HTML.Display`, `HTML.FontFamily`, `HTML.TextAlign`, `HTML.SelectorRelation`, and `HTML.RenderKind`. CSS text still uses `font-size: 16px; display: flex; justify-content: space-between`.
 - Native host properties, non-string React event/change keys, and native children are forwarded through `typed-instance-components`. Explicit native properties override CSS-derived values. `Hidden`/`display: none` and disabled controls remain enforced.
@@ -83,6 +83,34 @@ local element = e(HTML.Strong, badge)
 Normal inline text ignores box width/height and min/max dimensions inside a flow. Its root remains a `TextLabel`; wrapped fragments are native child labels, so nested components retain their identities and refs. `InlineBlock` remains an atomic box. `InlineFlex` combines an atomic outer box with the existing native flex layout.
 
 `LineHeight = 1.5` is a font-size multiplier; `LineHeight = "24px"` is an absolute line height. `WhiteSpace` accepts `Normal`, `Nowrap`, `Pre`, and `PreWrap`. Block margins support negative lengths, horizontal `"Auto"` centering, and adjacent sibling vertical collapse. Parent/child margin collapse is not implemented. Layout measurements are cached and geometry updates run outside React; resizing does not render every component again. See [the layout limits](docs/compatibility.md) and [the browser comparison](docs/visual-validation.md).
+
+### Markup and table content
+
+`HTML.Content` renders an ordered fragment into the surrounding HTML component. It adds no wrapper or selector ancestor. Both inputs use the same components and inline formatter:
+
+```luau
+local markup: HTML.ContentProperties = {
+	Source = [[Read <strong class="Accent">bold <em>and italic</em></strong>.<br/><u>Underlined <s>and struck</s></u>]],
+}
+local badge: HTML.ContentElement = {
+	Tag = "Strong", Text = "Badge", ClassName = "Accent",
+	CSS = { Display = "InlineBlock", Width = 96, Height = 40, Padding = 8 },
+	Ref = React.createRef(),
+}
+local nodes: { HTML.ContentNode } = { "A standalone ", badge, " beside flowing text." }
+local content: HTML.ContentProperties = { Source = nodes }
+local paragraph: HTML.PProperties = { CSS = { Width = 320, LineHeight = "24px" } }
+local element = e(HTML.P, paragraph, { Content = e(HTML.Content, content) })
+-- Use markup instead of content above to render the XML-style string.
+```
+
+Table fields and tags use PascalCase; `CSS` stays uppercase. Use an explicitly typed `{ HTML.ContentNode }` variable for mixed text/element arrays. `Text` precedes `Children`. Strings in table input and ordinary component `Text` are literal text, never parsed markup. Table nodes may carry native `Ref`s; set `Display = "InlineBlock"` to retain independent dimensions and constraints. `OrderOffset` places a fragment after other siblings' `LayoutOrder` values.
+
+String input accepts properly nested tags, quoted `id`/`class`/`style` attributes, comments, CDATA, XML entities plus `&nbsp;`, and numeric character references. Use `<br/>`, close every paired tag, and escape literal `<`/`&`. Raw markup uses normal HTML/CSS spelling; parser output uses PascalCase. Supported tags are the text-formatting subset plus `P`, `Div`, and `Br`, listed in the compatibility contract. It does not accept arbitrary Roblox RichText tags such as `<font>` or `<stroke>`.
+
+`HTML.Markup.parse(text)` and `HTML.Markup.validate(nodes)` return `HTML.MarkupResult`: `Success`, `Nodes`, and `Diagnostics`. Failed input returns no nodes. `Content.OnDiagnostics` receives the diagnostics after a source change (an empty array on success); without it, failures warn. String diagnostics have a one-based byte offset, line and byte column; table diagnostics include a field `Path`. Unknown tags, attributes, styles, malformed input, and inline `!important` are diagnosed. External stylesheets still support `!important` through `StyleProvider.StyleSheet`.
+
+Limits are 64 nested elements, 10,000 nodes, and 1 MiB of markup input or table text/identifier content. No scripts, DTD/entity loading, resource fetching, or HTML5 recovery is performed. Replace source tables when editing them. Anonymous text inherits typography without matching `Span` selectors; nested decoration propagates through inline descendants and stops at `InlineBlock`/`InlineFlex` boundaries.
 
 `StyleProvider.CSS` accepts a selector map of type `HTML.StyleMap`. Tag names and pseudo states use PascalCase (`Button:Hover`, `Input:Focus`, `Button:Disabled`). Class names and IDs are case-sensitive identifiers that must match `ClassName` and `Id`. Nested providers append rules while retaining ancestry and inherited typography. They introduce no Roblox instance:
 
@@ -160,7 +188,7 @@ Each component exports `Properties` and an explicit component function. Shared r
 
 `scripts/tags.luau` owns the tag catalog and default styles. Run `lune run scripts/generate` after editing it; commit the component folders, header, catalog, stories, and Wally directory list together. Generated source uses the same StyLua settings as `open-shl`; the check command detects drift.
 
-Local checks cover CSS parsing/cascade/selector behavior, selective style notifications (including 500 subscribers), generated story coverage, all 63 component property exports through the package header, formatting, strict runtime **and tooling** analysis, and 17 fixtures that must fail type checking. Build checks compile the runtime and demo and verify Wally contents. GitHub CI performs these checks; it does not run Studio.
+Local checks cover CSS parsing/cascade/selector behavior, selective style notifications (including 500 subscribers), inline flow, markup/table validation, generated story coverage, all 64 component property exports through the package header, formatting, strict runtime **and tooling** analysis, and 20 fixtures that must fail type checking. Build checks compile the runtime and demo and verify Wally contents. GitHub CI performs these checks; it does not run Studio.
 
 The editor uses the Luau LSP extension's automatically updated Roblox definitions. The pinned `.tools/globalTypes-*.d.luau` file is used only by the command-line checks; loading it again through `luau-lsp.types.definitionFiles` creates conflicting enum types (`@roblox` versus `@roblox0`). After changing these settings, restart the Luau language server if old diagnostics remain.
 
@@ -173,9 +201,10 @@ print(require(game.ReplicatedStorage.Tests.Integration)())
 print(require(game.ReplicatedStorage.Tests.StyleUpdates)())
 print(require(game.ReplicatedStorage.Tests.Stories)())
 print(require(game.ReplicatedStorage.Tests.Layout).Verify())
+print(require(game.ReplicatedStorage.Tests.Markup).Verify())
 ```
 
-The tests clean up their targets; the layout test uses a temporary StarterGui so the engine can compute geometry. Reopen the place before normal Play testing so the mocked scheduler does not affect the demo. Development validation mounts all 62 tags, 64 stories (including the inline layout comparison under **HTML Components → Div → Layout**), and the gallery. `StyleUpdates` verifies actual render invocations and committed updates, accounting for development Strict Mode's double invocation. The shared browser/Studio fixtures cover the original nine scenes and nested inline layout at two widths. See [the screenshot comparison workflow and measured limits](docs/visual-validation.md).
+The tests clean up their targets; layout tests use temporary StarterGuis so the engine can compute geometry. Reopen the place before normal Play testing so the mocked scheduler does not affect the demo. Development validation mounts all 62 tags, 65 stories (including **HTML Components → Div → Layout** and **HTML Components → Content**), and the gallery. `StyleUpdates` verifies actual render invocations and committed updates, accounting for development Strict Mode's double invocation. The shared browser/Studio fixtures cover the original nine scenes, nested inline layout, and markup/table/React equivalence at two widths. See [the screenshot comparison workflow and measured limits](docs/visual-validation.md).
 
 ## Releases
 

@@ -15,6 +15,7 @@ type Item = {
 	Text: string?,
 	Measure: ((string) -> number)?,
 	WhiteSpace: string?,
+	VerticalAlign: string?,
 	Break: boolean?,
 }
 -- Constants
@@ -67,6 +68,17 @@ local atomic: Item = { Display = "InlineBlock", Width = 40, Height = 32, LineHei
 result = Flow.layout({ text("one "), atomic, text(" two") }, options(80))
 check(result.Fragments[2].X == 40 and result.Fragments[2].Y == 0, "InlineBlock is atomic and baseline aligned")
 check(result.Height == 63, "Tall inline blocks expand the line box")
+local middle = table.clone(atomic)
+middle.Height, middle.VerticalAlign = 42, "Middle"
+local bottom = table.clone(atomic)
+bottom.Height, bottom.VerticalAlign = 56, "Bottom"
+result = Flow.layout({ text("a"), middle, bottom }, options(100))
+check(
+	result.Height == 56 and result.Fragments[2].Y == 14 and result.Fragments[3].Y == 0,
+	"A tall bottom-aligned box moves middle-aligned siblings with the shared baseline"
+)
+result = Flow.layout({ bottom, text("a") }, options(100))
+check(result.Fragments[2].Y == 34, "Text moves with the baseline beside a bottom-aligned box")
 result = Flow.layout({
 	text("one"),
 	{ Display = "Inline", Break = true, Width = 0, Height = 0, LineHeight = 0, Baseline = 0, Margin = ZERO },

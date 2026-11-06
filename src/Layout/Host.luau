@@ -1,6 +1,7 @@
 --!strict
 -- Packages
 -- Modules
+local Decoration = require(script.Parent.Parent.React.Render.Decoration)
 local Flow = require(script.Parent.Flow)
 local Metrics = require(script.Parent.Metrics)
 local Types = require(script.Parent.Parent.Types)
@@ -173,7 +174,7 @@ local function intrinsic(entry: Entry, available: number): number
 	if entry.Input.Size then
 		return entry.Input.Size.X.Scale * available + entry.Input.Size.X.Offset
 	end
-	if style.Width and style.Width ~= "auto" then
+	if style.Width and style.Width ~= "Auto" and style.Width ~= "auto" then
 		return Metrics.length(style.Width, available, 0)
 	end
 	local own = text(entry)
@@ -208,6 +209,7 @@ local function layout(entry: Entry, available: number, parentHeight: number): Bo
 		if mode == "InlineBlock"
 				or mode == "InlineFlex"
 				or style.Width == "auto"
+				or style.Width == "Auto"
 			then math.min(available, intrinsic(entry, available))
 			else available - margin.Left - margin.Right
 	)
@@ -351,7 +353,7 @@ local function layout(entry: Entry, available: number, parentHeight: number): Bo
 		height = result.Height
 	end
 	height += padding.Top + padding.Bottom
-	if style.Height and style.Height ~= "auto" then
+	if style.Height and style.Height ~= "Auto" and style.Height ~= "auto" then
 		height = Metrics.length(style.Height, parentHeight, height)
 	end
 	if native then
@@ -428,12 +430,7 @@ local function paint(box: Box, position: boolean)
 			end
 			label.Position = UDim2.fromOffset(fragment.X, fragment.Y)
 			label.Size = UDim2.fromOffset(fragment.Width + 1, fragment.Height)
-			local decoration = entry.Input.Style.TextDecoration
-			if decoration == "Underline" or decoration == "LineThrough" then
-				local escaped = label.Text:gsub("&", "&amp;"):gsub("<", "&lt;"):gsub(">", "&gt;")
-				local tag = if decoration == "Underline" then "u" else "s"
-				label.Text, label.RichText = `<{tag}>{escaped}</{tag}>`, true
-			end
+			label.Text, label.RichText = Decoration.markup(label.Text, entry.Input.Style.TextDecoration)
 		end
 	end
 	for index = #entry.Fragments, (if managedText then #box.Text else 0) + 1, -1 do

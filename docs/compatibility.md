@@ -46,7 +46,7 @@ Selectors: type, `*`, `.class`, `#id`, compound selectors, comma-separated selec
 | `font-size` | Nonnegative CSS em-size pixels, converted to Roblox TextSize line-height units using the bundled font metrics and rounded to integer pixels. Explicit native TextSize overrides this conversion. |
 | `font-family` | `sans-serif`, `serif`, `monospace`; SourceSansPro, Merriweather, RobotoMono. |
 | `font-weight`, `font-style` | `normal`/`bold`, `normal`/`italic`. |
-| `text-align`, `text-decoration` | `left`/`center`/`right`; `none`/`underline`/`line-through`. Decoration escapes text before adding Roblox RichText markup. |
+| `text-align`, `text-decoration` | `left`/`center`/`right`; `none`/`underline`/`line-through`, including `underline line-through`. Table form uses `UnderlineLineThrough` for both. Decoration escapes text before adding Roblox RichText markup. |
 | `white-space` | `normal`, `pre`, `pre-wrap`, `nowrap`. Flowing text collapses ASCII spaces/tabs/newlines across element boundaries or preserves them in pre modes. Tabs currently use four spaces, not CSS tab stops. |
 | `border-width` | Nonnegative pixels; UIStroke with Border apply mode and Inner border position. |
 | `border-radius`, four corner radii | Shorthand accepts 1–4 nonnegative lengths. Individual UICorner radii; one circular radius per corner, no elliptical `/` syntax. |
@@ -55,7 +55,7 @@ Selectors: type, `*`, `.class`, `#id`, compound selectors, comma-separated selec
 
 Inline `CSS` uses PascalCase fields (`BackgroundColor`, `BorderTopRightRadius`) and PascalCase option values (`Display = "Flex"`, `FontFamily = "SansSerif"`). Named option types and all `ComponentNameProperties` types are exported directly from the package header. Numbers are pixels for lengths. Inline `Padding` and `BorderRadius` are a single length; use the side/corner fields for asymmetry. Raw HTML/CSS syntax is unchanged. Native property types remain those supplied by typed-instance-components.
 
-Only color, font properties, line height, text alignment, and whitespace inherit. Borders, backgrounds, padding, dimensions, and layout do not. Text decoration is local in this version. Styles are authored in React; this package does not install a Roblox StyleSheet/StyleLink or arbitrate concurrent engine styling of the same properties.
+Only color, font properties, line height, text alignment, and whitespace inherit. Borders, backgrounds, padding, dimensions, and layout do not. Text decoration propagates through inline descendants separately: a child's `None` does not remove its ancestor's decoration, and `InlineBlock`/`InlineFlex` starts a new decoration boundary. Decoration color/thickness and full CSS decoration painting are not implemented. Styles are authored in React; this package does not install a Roblox StyleSheet/StyleLink or arbitrate concurrent engine styling of the same properties.
 
 There is no content-box sizing, positioned layout, flex-grow/shrink/basis, CSS grid, media/container queries, variables, at-rules, pseudo-elements, attribute/sibling selectors, transitions, animations, gradients, filters, transforms, multiple shadows, group opacity, or full CSS grammar. Unsupported declarations/selectors produce diagnostics. Unsupported at-rules are skipped as a whole. Valid declarations in a supported rule still apply.
 
@@ -85,6 +85,18 @@ API references checked during implementation:
 
 The connected Studio successfully created UIShadow, independent UICorner radii, and the newer UIStroke border-position property. Engine/API availability on a different target client remains a deployment requirement.
 
+## XML-style fragments and table input
+
+`HTML.Content` accepts a well-formed XML-style string or an ordered `{ HTML.ContentNode }` array. `HTML.Markup.parse` returns that tree; `HTML.Markup.validate` checks and copies table input. Public types are exported from the package header. The fragment component contributes no native wrapper or selector ancestor. Plain strings become anonymous text hosts that inherit typography without matching any tag selector. Parsed elements preserve their own native roots, CSS classes, and layout behavior. Table nodes additionally accept `Ref`.
+
+The supported `ContentTag` subset is `Div`, `P`, `Span`, `Strong`, `B`, `Em`, `I`, `U`, `S`, `Del`, `Ins`, `Code`, `Kbd`, `Samp`, `Small`, `Mark`, `Abbr`, `Time`, `Output`, `Q`, `Cite`, `Var`, `Label`, and `Br`. Other library components remain available through ordinary React composition. They are not yet importable through `Content`. Parsed text lives in anonymous child text hosts; an element root's native `Text` is not an aggregate of its descendants. Keep the typed node tree when the application needs to inspect content.
+
+String input recognizes these tag names case-insensitively, but opening/closing spelling must match exactly. Attributes are quoted lowercase `id`, `class`, and `style` only. Every paired tag must close; use `<br/>` or `<br></br>`. Text supports comments, CDATA, the five XML named entities, `nbsp`, and decimal/hex numeric references. Table input uses PascalCase `Tag`, `Id`, `ClassName`, `CSS`, `Text`, `Children`, `Ref`; text is literal and is not entity-decoded. `Text` is emitted before `Children`, and array order sets native `LayoutOrder`.
+
+Malformed input, unsupported tags/attributes/style declarations, invalid UTF-8, cycles, sparse arrays, and limit violations fail the entire fragment with diagnostics. Limits: 64 nested elements, 10,000 nodes, 1 MiB of string source or table text/identifiers. Markup diagnostics identify one-based byte positions; table diagnostics provide field paths. Inline `!important` is rejected; parsed external `StyleSheet`s retain their existing cascade behavior. `OnDiagnostics` receives an empty array when a later source is valid.
+
+This is not an HTML5 document parser or a parser for Roblox's entire RichText language. There are no optional closing tags, unquoted/boolean attributes, automatic paragraph repair, full HTML entity catalog, `<font>`/`<stroke>` commands, scripts, DTDs, network loading, or resource resolution. Native RichText is generated internally for supported decorations. Formatting tags still exist as independent elements; `InlineBlock` enables their own size, padding, and constraints. The inline layout limits above continue to apply.
+
 ## Future HTML importer
 
-An importer can normalize attributes, dispatch known tags through `HTML.Tags`, assign LayoutOrder from document order, represent mixed text as ordered Span/Strong/etc. children, and pass parsed stylesheets to StyleProvider. It must explicitly report unsupported tags, attributes, CSS, and browser behaviors. The shared inline formatter supplies the first mixed-text foundation. The next layout priorities are content-box sizing, min-content sizing, flex grow/shrink/basis, browser default styles and broader line-breaking rules. HTML tokenization, entities, error recovery, resource loading, DOM events, and sanitization remain outside this package's current API.
+The typed node tree and XML-style parser provide the first import path for mixed text. A broader importer must add HTML5 tokenization/error recovery, the remaining component tags/attributes, document styles, and explicit resource/event handling. The next layout priorities are content-box sizing, min-content sizing, flex grow/shrink/basis, browser default styles and broader line-breaking rules. Unsupported browser behavior must remain visible through diagnostics.

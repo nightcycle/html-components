@@ -9,7 +9,8 @@
       "Demo": { "$path": "demo/App.luau" },
       "Tests": { "$path": "tests/roblox" },
       "VisualFixtures": { "$path": "tests/visual/Fixtures.luau" },
-      "FlowFixtures": { "$path": "tests/visual/FlowFixtures.luau" }
+      "FlowFixtures": { "$path": "tests/visual/FlowFixtures.luau" },
+      "MarkupFixtures": { "$path": "tests/visual/MarkupFixtures.luau" }
     },
     "StarterPlayer": {
       "StarterPlayerScripts": { "HTMLDemo": { "$path": "demo/Main.client.luau" } }

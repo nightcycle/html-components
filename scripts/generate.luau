@@ -33,8 +33,10 @@ local header = {
 	"-- Modules",
 	"local CSS = require(script.CSS)",
 	"local Catalog = require(script.Catalog)",
+	"local Markup = require(script.Markup)",
 	"-- Components",
 	"local StyleProvider = require(script.React.Component.StyleProvider)",
+	"local Content = require(script.React.Component.Content)",
 }
 local names: { string } = {}
 local tags = { "\tTags = {" }
@@ -126,7 +128,7 @@ return createStory(%q)
 	table.insert(typeChecks, `\tHTML.{name}({name}Properties)`)
 end
 table.insert(header, "-- Hooks\n-- Contexts\n-- Types\nlocal Types = require(script.Types)")
-local componentTypes: { [string]: boolean } = { StyleProviderProperties = true }
+local componentTypes: { [string]: boolean } = { StyleProviderProperties = true, ContentProperties = true }
 for _, spec in specs do
 	componentTypes[spec.Name .. "Properties"] = true
 end
@@ -139,8 +141,12 @@ for _, spec in specs do
 	table.insert(header, `export type {spec.Name}Properties = {spec.Name}.Properties`)
 end
 table.insert(header, "export type StyleProviderProperties = StyleProvider.Properties")
+table.insert(header, "export type ContentProperties = Content.Properties")
 table.insert(header, "-- Constants\n-- Variables\n-- References\n-- Private Functions\n-- Class\nreturn table.freeze({")
-table.insert(header, "\tCSS = CSS,\n\tStyleProvider = StyleProvider,\n\tCatalog = Catalog,")
+table.insert(
+	header,
+	"\tCSS = CSS,\n\tStyleProvider = StyleProvider,\n\tCatalog = Catalog,\n\tMarkup = Markup,\n\tContent = Content,"
+)
 for _, name in names do
 	table.insert(header, name)
 end
@@ -156,6 +162,12 @@ table.insert(
 	local css: HTML.StyleMap = { [".Primary"] = { FontSize = 16, FontWeight = "Bold" }, ["Button:Hover"] = { BackgroundColor = "#315fe8" } }
 	local properties: HTML.StyleProviderProperties = { CSS = css }
 	HTML.StyleProvider(properties)
+	local node: HTML.ContentElement = { Tag = "Strong", Text = "Typed content" }
+	local nodes: { HTML.ContentNode } = { "Text and ", node }
+	local content: HTML.ContentProperties = { Source = nodes }
+	HTML.Content(content)
+	local parsed: HTML.MarkupResult = HTML.Markup.parse("<strong>Text</strong>")
+	assert(parsed.Success)
 end]]
 )
 write("src/init.luau", table.concat(header, "\n") .. "\n")
@@ -177,7 +189,7 @@ for _, output in outputs do
 		fs.writeFile(output.Path, source)
 	end
 end
-local folders = { "StyleProvider" }
+local folders = { "StyleProvider", "Content" }
 for _, spec in specs do
 	table.insert(folders, spec.Name)
 end

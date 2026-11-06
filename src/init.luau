@@ -4,6 +4,7 @@
 -- Modules
 local CSS = require(script.CSS)
 local Catalog = require(script.Catalog)
+local Markup = require(script.Markup)
 -- Components
 local A = require(script.React.Component.A)
 local Abbr = require(script.React.Component.Abbr)
@@ -17,6 +18,7 @@ local Br = require(script.React.Component.Br)
 local Button = require(script.React.Component.Button)
 local Cite = require(script.React.Component.Cite)
 local Code = require(script.React.Component.Code)
+local Content = require(script.React.Component.Content)
 local Dd = require(script.React.Component.Dd)
 local Del = require(script.React.Component.Del)
 local Div = require(script.React.Component.Div)
@@ -102,6 +104,14 @@ export type Rule = Types.Rule
 export type StyleMap = Types.StyleMap
 export type StyleSheet = Types.StyleSheet
 export type StyleContext = Types.StyleContext
+export type ContentTag = Types.ContentTag
+export type ContentElement = Types.ContentElement
+export type ContentNode = Types.ContentNode
+export type ContentSource = Types.ContentSource
+export type SourceLocation = Types.SourceLocation
+export type MarkupDiagnostic = Types.MarkupDiagnostic
+export type MarkupResult = Types.MarkupResult
+export type DeclarationResult = Types.DeclarationResult
 export type Common = Types.Common
 export type ContainerProperties = Types.ContainerProperties
 export type TextProperties = Types.TextProperties
@@ -170,6 +180,7 @@ export type MeterProperties = Meter.Properties
 export type HrProperties = Hr.Properties
 export type BrProperties = Br.Properties
 export type StyleProviderProperties = StyleProvider.Properties
+export type ContentProperties = Content.Properties
 -- Constants
 -- Variables
 -- References
@@ -179,6 +190,8 @@ return table.freeze({
 	CSS = CSS,
 	StyleProvider = StyleProvider,
 	Catalog = Catalog,
+	Markup = Markup,
+	Content = Content,
 	Html = Html,
 	Body = Body,
 	Div = Div,

@@ -129,4 +129,10 @@ return function()
 		{ [".Primary"] = { FontSize = 16, FontWeight = "Bold" }, ["Button:Hover"] = { BackgroundColor = "#315fe8" } }
 	local properties: HTML.StyleProviderProperties = { CSS = css }
 	HTML.StyleProvider(properties)
+	local node: HTML.ContentElement = { Tag = "Strong", Text = "Typed content" }
+	local nodes: { HTML.ContentNode } = { "Text and ", node }
+	local content: HTML.ContentProperties = { Source = nodes }
+	HTML.Content(content)
+	local parsed: HTML.MarkupResult = HTML.Markup.parse("<strong>Text</strong>")
+	assert(parsed.Success)
 end

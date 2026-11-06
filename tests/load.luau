@@ -24,6 +24,10 @@ return function(): (string) -> any
 			"src/CSS/Values.luau",
 			"src/CSS/Selector.luau",
 			"src/React/Context/StyleStore.luau",
+			"src/React/Render/Decoration.luau",
+			"src/Markup/init.luau",
+			"src/Markup/Entities.luau",
+			"src/Markup/Tags.luau",
 		}
 	do
 		local name = path:gsub("/init%.luau$", ""):gsub("%.luau$", "")

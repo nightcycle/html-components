@@ -58,15 +58,21 @@ function Flow.layout(items: { Item }, options: Options): Result
 			return
 		end
 		local above, below = options.Baseline, options.LineHeight - options.Baseline
-		local edgeHeight = 0
+		local topHeight, bottomHeight = 0, 0
 		for _, piece in line do
-			if piece.Align == "Top" or piece.Align == "Bottom" then
-				edgeHeight = math.max(edgeHeight, piece.Height)
+			if piece.Align == "Top" then
+				topHeight = math.max(topHeight, piece.Height)
+			elseif piece.Align == "Bottom" then
+				bottomHeight = math.max(bottomHeight, piece.Height)
 			else
 				above, below = math.max(above, piece.Above), math.max(below, piece.Below)
 			end
 		end
-		local height = math.max(above + below, edgeHeight)
+		-- Bottom-aligned boxes expand above the shared baseline; top-aligned
+		-- boxes expand below it. Merely increasing height leaves siblings too high.
+		above = math.max(above, bottomHeight - below)
+		below = math.max(below, topHeight - above)
+		local height = above + below
 		local start = if options.TextAlign == "Center"
 			then (options.Width - x) / 2
 			elseif options.TextAlign == "Right" then options.Width - x

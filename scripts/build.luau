@@ -59,8 +59,19 @@ for _, spec in require("./tags") do
 	assert(paths:find(`src/React/Component/{spec.Name}/init.luau`, 1, true), `Missing packaged component {spec.Tag}`)
 end
 for _, path in
-	{ "src/Layout/Flow.luau", "src/Layout/Host.luau", "src/Layout/Metrics.luau", "src/React/Hook/useFlow.luau" }
+	{
+		"src/Layout/Flow.luau",
+		"src/Layout/Host.luau",
+		"src/Layout/Metrics.luau",
+		"src/React/Hook/useFlow.luau",
+		"src/Markup/init.luau",
+		"src/Markup/Entities.luau",
+		"src/Markup/Tags.luau",
+		"src/React/Component/Content/init.luau",
+		"src/React/Render/ContentText.luau",
+		"src/React/Render/Decoration.luau",
+	}
 do
-	assert(paths:find(path, 1, true), `Missing packaged layout module {path}`)
+	assert(paths:find(path, 1, true), `Missing packaged runtime module {path}`)
 end
 print(`Built and compiled {moduleCount} scripts across package and demo; Wally contents verified.`)

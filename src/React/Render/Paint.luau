@@ -4,6 +4,7 @@
 local React = require(script.Parent.Parent.Parent.Parent.React)
 local RobloxComponents = require(script.Parent.Parent.Parent.Parent.RobloxComponents)
 -- Modules
+local Decoration = require(script.Parent.Decoration)
 local Values = require(script.Parent.Parent.Parent.CSS.Values)
 -- Components
 -- Hooks
@@ -31,7 +32,7 @@ end
 function Paint.box(style: Types.Style, tag: string): RobloxComponents.GuiObjectProperties
 	local width = if style.Width then Values.length(style.Width) else nil
 	local height = if style.Height then Values.length(style.Height) else nil
-	local autoX = style.Width == "auto"
+	local autoX = style.Width == "Auto" or style.Width == "auto"
 	local autoY = height == nil
 	local background, transparency = Values.color(style.BackgroundColor or "transparent")
 	return {
@@ -74,13 +75,7 @@ function Paint.text(style: Types.Style, tag: string, text: string): RobloxCompon
 		else Enum.TextXAlignment.Left
 	props.TextYAlignment = Enum.TextYAlignment.Top
 	props.TextWrapped = style.WhiteSpace ~= "Pre" and style.WhiteSpace ~= "Nowrap"
-	props.RichText = style.TextDecoration == "Underline" or style.TextDecoration == "LineThrough"
-	if props.RichText then
-		local escaped =
-			text:gsub("&", "&amp;"):gsub("<", "&lt;"):gsub(">", "&gt;"):gsub('"', "&quot;"):gsub("'", "&apos;")
-		local markup = if style.TextDecoration == "Underline" then "u" else "s"
-		props.Text = `<{markup}>{escaped}</{markup}>`
-	end
+	props.Text, props.RichText = Decoration.markup(text, style.TextDecoration)
 	return props
 end
 
