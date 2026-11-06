@@ -82,13 +82,14 @@ export type SelectorPart = {
 export type Specificity = { Ids: number, Classes: number, Tags: number }
 export type Selector = { Parts: { SelectorPart }, Specificity: Specificity }
 export type Rule = { Selector: Selector, Style: Style, Important: Style }
+export type StyleMap = { [string]: Style }
 export type StyleSheet = { Rules: { Rule }, Diagnostics: { Diagnostic } }
 export type StyleContext = { Sheets: { StyleSheet }, Ancestors: { Node }, Inherited: Style }
 
 export type Common = {
 	Id: string?,
 	ClassName: string?,
-	Css: Style?,
+	CSS: Style?,
 	Hidden: boolean?,
 	Children: React.ReactNode?,
 	-- Explicit metadata because the typed instance builder filters string ref/children keys.
@@ -120,6 +121,6 @@ export type MeterProperties =
 	Roblox.FrameProperties
 	& Common
 	& { Value: number?, Min: number?, Max: number?, FillColor: Color3? }
-export type ProviderProperties = { StyleSheet: StyleSheet?, CSS: string?, Children: React.ReactNode? }
+export type ProviderProperties = { StyleSheet: StyleSheet?, CSS: StyleMap?, Children: React.ReactNode? }
 
 return {}

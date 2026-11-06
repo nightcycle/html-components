@@ -64,7 +64,7 @@ img, video { display: block; }
 hr { display: block; width: 100%; height: 1px; background: #b4bed1; }
 br { display: block; width: 100%; height: 16px; content: ""; }
 #flex { flex-direction: row; }
-]=] .. Fixtures.CSS .. '</style><main id="board">' .. table.concat(cells, "\n") .. "</main></html>"
+]=] .. Fixtures.CSSText .. '</style><main id="board">' .. table.concat(cells, "\n") .. "</main></html>"
 fs.writeDir("build/visual")
 fs.writeFile("build/visual/index.html", source)
 print("Wrote build/visual/index.html from the shared Studio/browser fixtures.")

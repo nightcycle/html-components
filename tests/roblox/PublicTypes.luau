@@ -125,6 +125,8 @@ return function()
 	HTML.Hr(HrProperties)
 	local BrProperties: HTML.BrProperties = {}
 	HTML.Br(BrProperties)
-	local properties: HTML.StyleProviderProperties = {}
+	local css: HTML.StyleMap =
+		{ [".Primary"] = { FontSize = 16, FontWeight = "Bold" }, ["Button:Hover"] = { BackgroundColor = "#315fe8" } }
+	local properties: HTML.StyleProviderProperties = { CSS = css }
 	HTML.StyleProvider(properties)
 end

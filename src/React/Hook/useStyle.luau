@@ -39,7 +39,7 @@ return function(tag: Types.Tag, props: Types.Common, defaults: Types.Style, disa
 		Focus = focus,
 		Disabled = disabled,
 	}
-	local style, scope = useStyleScope({ Node = node, Defaults = defaults, Inline = props.Css })
+	local style, scope = useStyleScope({ Node = node, Defaults = defaults, Inline = props.CSS })
 	return {
 		Style = style,
 		Context = scope,

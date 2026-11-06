@@ -150,7 +150,14 @@ table.insert(header, "})")
 table.insert(catalog, "}\nreturn catalog")
 table.insert(tagLookup, "}\nreturn function(source: string): Name?\n\treturn names[string.lower(source)]\nend")
 table.insert(tagType, table.concat(tagLookup, "\n"))
-table.insert(typeChecks, "\tlocal properties: HTML.StyleProviderProperties = {}\n\tHTML.StyleProvider(properties)\nend")
+table.insert(
+	typeChecks,
+	[[
+	local css: HTML.StyleMap = { [".Primary"] = { FontSize = 16, FontWeight = "Bold" }, ["Button:Hover"] = { BackgroundColor = "#315fe8" } }
+	local properties: HTML.StyleProviderProperties = { CSS = css }
+	HTML.StyleProvider(properties)
+end]]
+)
 write("src/init.luau", table.concat(header, "\n") .. "\n")
 write("src/Catalog.luau", table.concat(catalog, "\n") .. "\n")
 write("src/Tag.luau", table.concat(tagType, "\n") .. "\n")

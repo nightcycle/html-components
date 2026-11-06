@@ -24,12 +24,26 @@ return UILabs.CreateReactStory(
 		local color = if props.controls.Dark then "#e9efff" else "#25314b"
 		local background = if props.controls.Dark then "#25314b" else "#f1f4fb"
 		return e(HTML.StyleProvider, {
-			CSS = `.card \{ color: {color}; background-color: {background}; padding: 24px; gap: {props.controls.Gap}px; border-radius: 24px 6px 24px 6px; box-shadow: 0px 8px 18px #00000030; \} .card > h2 \{ color: #6685ff; \} .card button:hover \{ background-color: #5479ff; \}`,
+			CSS = {
+				[".Card"] = {
+					Color = color,
+					BackgroundColor = background,
+					Padding = 24,
+					Gap = props.controls.Gap,
+					BorderTopLeftRadius = 24,
+					BorderTopRightRadius = 6,
+					BorderBottomRightRadius = 24,
+					BorderBottomLeftRadius = 6,
+					BoxShadow = "0px 8px 18px #00000030",
+				},
+				[".Card > H2"] = { Color = "#6685ff" },
+				[".Card Button:Hover"] = { BackgroundColor = "#5479ff" },
+			},
 		}, {
 			Stage = e(PreviewStage, { Size = Vector2.new(480, 300), Inset = 24 } :: PreviewStage.Properties, {
 				Card = e(
 					HTML.Article,
-					{ ClassName = "card", Size = UDim2.fromScale(1, 1), AutomaticSize = Enum.AutomaticSize.None } :: HTML.ContainerProperties,
+					{ ClassName = "Card", Size = UDim2.fromScale(1, 1), AutomaticSize = Enum.AutomaticSize.None } :: HTML.ContainerProperties,
 					{
 						Title = e(HTML.H2, { Text = "CSS through context", LayoutOrder = 1 } :: HTML.TextProperties),
 						Body = e(
@@ -39,7 +53,7 @@ return UILabs.CreateReactStory(
 								LayoutOrder = 2,
 							} :: HTML.TextProperties
 						),
-						Nested = e(HTML.StyleProvider, { CSS = "button { background-color: #315fe8; }" }, {
+						Nested = e(HTML.StyleProvider, { CSS = { Button = { BackgroundColor = "#315fe8" } } }, {
 							Button = e(
 								HTML.Button,
 								{ Text = "Hover to test the cascade", LayoutOrder = 3 } :: HTML.ButtonProperties

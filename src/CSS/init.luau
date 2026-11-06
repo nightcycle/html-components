@@ -6,6 +6,7 @@ local CSS = {}
 
 export type Style = Types.Style
 export type StyleSheet = Types.StyleSheet
+export type StyleMap = Types.StyleMap
 export type Diagnostic = Types.Diagnostic
 type Property = { Key: string, Kind: string, Allowed: { string }? }
 local properties: { [string]: Property } = {}
@@ -47,6 +48,10 @@ local options: { [string]: { string } } = {
 }
 for name, allowed in options do
 	properties[name] = { Key = Values.pascal(name), Kind = "option", Allowed = allowed }
+end
+local styleKeys: { [string]: boolean } = { Padding = true, BorderRadius = true, BoxShadow = true }
+for _, property in properties do
+	styleKeys[property.Key] = true
 end
 
 local function declaration(name: string, value: string): Types.Style?
@@ -221,6 +226,44 @@ local function normalize(style: Types.Style): Types.Style
 		result.BorderBottomLeftRadius = style.BorderBottomLeftRadius or style.BorderRadius
 	end
 	return result
+end
+
+-- Map insertion order is unspecified. Sort selector keys for a deterministic
+-- tie-break after specificity; parsed browser CSS retains textual source order.
+function CSS.fromMap(styles: Types.StyleMap): Types.StyleSheet
+	local sheet: Types.StyleSheet = { Rules = {}, Diagnostics = {} }
+	local selectors: { string } = {}
+	for selector in styles do
+		table.insert(selectors, selector)
+	end
+	table.sort(selectors)
+	for _, source in selectors do
+		local normal: Types.Style = {}
+		local record = (normal :: unknown) :: { [string]: unknown }
+		for key, value in (styles[source] :: unknown) :: { [string]: unknown } do
+			if styleKeys[key] then
+				record[key] = value
+			else
+				table.insert(sheet.Diagnostics, {
+					Message = `Unsupported style field: {key}; use PascalCase property names`,
+					Source = source,
+				})
+			end
+		end
+		local style = normalize(normal)
+		for _, text in Values.split(source, ",") do
+			local selector = Selector.parse(text, true)
+			if selector then
+				table.insert(sheet.Rules, { Selector = selector, Style = style, Important = {} })
+			else
+				table.insert(sheet.Diagnostics, {
+					Message = "Unsupported selector; use PascalCase tag names and states (Button:Hover)",
+					Source = text,
+				})
+			end
+		end
+	end
+	return sheet
 end
 
 function CSS.resolve(

@@ -113,9 +113,9 @@ for index = 1, 500 do
 		end)
 	)
 end
-large.Update({ Sheets = { CSS.parse(".item-237 { color: red; }") } })
+large.Update({ Sheets = { CSS.fromMap({ [".item-237"] = { Color = "red" } }) } })
 check(renders == 1, "One changed class among 500 subscribers produces one render notification")
-large.Update({ Sheets = { CSS.parse(".item-237 { color: red; } .unmatched { color: blue; }") } })
+large.Update({ Sheets = { CSS.fromMap({ [".item-237"] = { Color = "red" }, [".unmatched"] = { Color = "blue" } }) } })
 check(renders == 1, "Unmatched rule produces zero render notifications")
 for _, cleanup in cleanups do
 	cleanup()

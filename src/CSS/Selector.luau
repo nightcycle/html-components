@@ -4,7 +4,7 @@ local Types = require(script.Parent.Parent.Types)
 local Values = require(script.Parent.Values)
 local Selector = {}
 
-function Selector.parse(source: string): Types.Selector?
+function Selector.parse(source: string, pascalCase: boolean?): Types.Selector?
 	local tokens: { string } = {}
 	for token in source:gsub(">", " > "):gmatch("%S+") do
 		table.insert(tokens, token)
@@ -24,7 +24,7 @@ function Selector.parse(source: string): Types.Selector?
 			local tag = rest:match("^([%a][%w%-]*)") or rest:match("^(%*)")
 			if tag then
 				part.Tag = if tag == "*" then nil else Tag(tag)
-				if tag ~= "*" and not part.Tag then
+				if tag ~= "*" and (not part.Tag or (pascalCase and tag ~= part.Tag)) then
 					return nil
 				end
 				specificity.Tags += if tag == "*" then 0 else 1
@@ -45,7 +45,10 @@ function Selector.parse(source: string): Types.Selector?
 					table.insert(part.Classes, name)
 					specificity.Classes += 1
 				else
-					if not table.find({ "hover", "active", "focus", "disabled" }, name) then
+					local states = if pascalCase
+						then { "Hover", "Active", "Focus", "Disabled" }
+						else { "hover", "active", "focus", "disabled" }
+					if not table.find(states, name) then
 						return nil
 					end
 					table.insert(part.States, Values.pascal(name) :: Types.SelectorState)

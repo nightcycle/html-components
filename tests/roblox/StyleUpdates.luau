@@ -35,14 +35,14 @@ return function(): string
 		Panel = e(panel, { Name = "Panel", ClassName = "panel" }, {
 			Match = e(text, { Name = "Match", ClassName = "target", Text = "Matching class" }),
 			Inherited = e(text, { Name = "Inherited", Text = "Inherited typography" }),
-			Fixed = e(text, { Name = "Fixed", Css = { Color = "purple" }, Text = "Inline override" }),
-			Nested = e(HTML.StyleProvider, { CSS = ".nested { color: green; }" }, {
+			Fixed = e(text, { Name = "Fixed", CSS = { Color = "purple" }, Text = "Inline override" }),
+			Nested = e(HTML.StyleProvider, { CSS = { [".nested"] = { Color = "green" } } }, {
 				Text = e(text, { Name = "Nested", ClassName = "nested", Text = "Nested override" }),
 			}),
 		}),
 		Other = e(text, { Name = "Other", ClassName = "other", Text = "Independent branch" }),
 	}
-	local function render(css: string)
+	local function render(css: HTML.StyleMap)
 		table.clear(renders)
 		table.clear(commits)
 		ReactRoblox.act(function()
@@ -57,23 +57,31 @@ return function(): string
 		assert((commits[name] or 0) == count, `{name}: expected {count} commits, got {commits[name] or 0}`)
 	end
 	local ok, problem = pcall(function()
-		render(".panel { color: red; } .target { background-color: red; }")
+		render({ [".panel"] = { Color = "red" }, [".target"] = { BackgroundColor = "red" } })
 		local match = target:FindFirstChild("Match", true) :: TextLabel
 		local inherited = target:FindFirstChild("Inherited", true) :: TextLabel
 		local fixed = target:FindFirstChild("Fixed", true) :: TextLabel
 		local nested = target:FindFirstChild("Nested", true) :: TextLabel
 		assert(match.TextColor3 == Color3.fromRGB(255, 0, 0), "Initial inheritance")
-		render(".panel { color: red; } .target { background-color: blue; }")
+		render({ [".panel"] = { Color = "red" }, [".target"] = { BackgroundColor = "blue" } })
 		expect("Match", 1)
 		for _, name in { "Panel", "Inherited", "Fixed", "Nested", "Other" } do
 			expect(name, 0)
 		end
 		assert(match.BackgroundColor3 == Color3.fromRGB(0, 0, 255), "Matching host changed")
-		render(".panel { color: red; } .target { background-color: blue; } .unused { font-size: 32px; }")
+		render({
+			[".panel"] = { Color = "red" },
+			[".target"] = { BackgroundColor = "blue" },
+			[".unused"] = { FontSize = 32 },
+		})
 		assert(next(renders) == nil, "Unmatched rules must not render components")
-		render(".panel{color:red}.target{background-color:blue}.unused{font-size:32px}")
+		render({
+			[".unused"] = { FontSize = 32 },
+			[".target"] = { BackgroundColor = "blue" },
+			[".panel"] = { Color = "red" },
+		})
 		assert(next(renders) == nil, "Equivalent CSS must not render components")
-		render(".panel { color: blue; } .target { background-color: blue; }")
+		render({ [".panel"] = { Color = "blue" }, [".target"] = { BackgroundColor = "blue" } })
 		for _, name in { "Panel", "Match", "Inherited" } do
 			expect(name, 1)
 		end
@@ -83,7 +91,7 @@ return function(): string
 		assert(inherited.TextColor3 == Color3.fromRGB(0, 0, 255), "Changed inheritance")
 		assert(fixed.TextColor3 == Color3.fromRGB(128, 0, 128), "Inline override retained")
 		assert(nested.TextColor3 == Color3.fromRGB(0, 128, 0), "Nested override retained")
-		render(".panel { color: blue; background-color: red; } .target { background-color: blue; }")
+		render({ [".panel"] = { Color = "blue", BackgroundColor = "red" }, [".target"] = { BackgroundColor = "blue" } })
 		expect("Panel", 1)
 		for _, name in { "Match", "Inherited", "Fixed", "Nested", "Other" } do
 			expect(name, 0)

@@ -50,7 +50,7 @@ Selectors: type, `*`, `.class`, `#id`, compound selectors, comma-separated selec
 | `box-shadow` | One shadow: `[inset] x y blur [spread] color`, pixel lengths, nonnegative blur, color last; or `none`. Maps to UIShadow. |
 | `overflow` | `visible`, `hidden`; ClipsDescendants. Scroll containers are supplied as native ScrollingFrames. |
 
-Inline `Css` uses PascalCase fields (`BackgroundColor`, `BorderTopRightRadius`) and PascalCase option values (`Display = "Flex"`, `FontFamily = "SansSerif"`). Named option types and all `ComponentNameProperties` types are exported directly from the package header. Numbers are pixels for lengths. Inline `Padding` and `BorderRadius` are a single length; use the side/corner fields for asymmetry. Raw HTML/CSS syntax is unchanged. Native property types remain those supplied by typed-instance-components.
+Inline `CSS` uses PascalCase fields (`BackgroundColor`, `BorderTopRightRadius`) and PascalCase option values (`Display = "Flex"`, `FontFamily = "SansSerif"`). Named option types and all `ComponentNameProperties` types are exported directly from the package header. Numbers are pixels for lengths. Inline `Padding` and `BorderRadius` are a single length; use the side/corner fields for asymmetry. Raw HTML/CSS syntax is unchanged. Native property types remain those supplied by typed-instance-components.
 
 Only color, font properties, text alignment, and whitespace inherit. Borders, backgrounds, padding, dimensions, and layout do not. Text decoration is local in this version. Styles are authored in React; this package does not install a Roblox StyleSheet/StyleLink or arbitrate concurrent engine styling of the same properties.
 

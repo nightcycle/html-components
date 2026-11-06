@@ -49,7 +49,7 @@ return function(): React.ReactNode
 			Position = UDim2.fromOffset(12, 8),
 			Size = UDim2.fromOffset(288, 20),
 			Text = case.Title,
-			Css = { FontSize = 14 },
+			CSS = { FontSize = 14 },
 			FontFace = Font.new("rbxasset://fonts/families/SourceSansPro.json", Enum.FontWeight.SemiBold),
 			TextXAlignment = Enum.TextXAlignment.Left,
 			TextYAlignment = Enum.TextYAlignment.Top,
@@ -77,7 +77,8 @@ return function(): React.ReactNode
 			})),
 		}))
 	end
-	local providerProperties: HTML.StyleProviderProperties = { CSS = Fixtures.CSS }
+	-- The visual reference deliberately exercises imported browser CSS.
+	local providerProperties: HTML.StyleProviderProperties = { StyleSheet = HTML.CSS.parse(Fixtures.CSSText) }
 	return e(HTML.StyleProvider, providerProperties, {
 		Board = e(Roblox.Frame({
 			Name = "ParityBoard",

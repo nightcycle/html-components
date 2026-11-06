@@ -62,7 +62,7 @@ return function(props: Properties)
 		or (if props.Tag == "Pre" then "local greeting = 'Hello'\nprint(greeting)" else "The quick brown fox")
 	local content: React.ReactNode
 	if kind == "Container" then
-		content = e(component, { Id = "sample", Css = { Padding = 12, Gap = 6 } } :: HTML.ContainerProperties, {
+		content = e(component, { Id = "sample", CSS = { Padding = 12, Gap = 6 } } :: HTML.ContainerProperties, {
 			Title = e(HTML.H3, { Text = "A semantic container", LayoutOrder = 1 } :: HTML.TextProperties),
 			Body = e(HTML.P, { Text = "Typography inherits through context.", LayoutOrder = 2 } :: HTML.TextProperties),
 			Action = e(
@@ -82,7 +82,7 @@ return function(props: Properties)
 			{
 				Id = "sample",
 				Text = text,
-				Css = { Padding = 12 },
+				CSS = { Padding = 12 },
 				TextYAlignment = Enum.TextYAlignment.Center,
 			} :: HTML.TextProperties
 		)
@@ -144,7 +144,18 @@ return function(props: Properties)
 		background = foreground
 	end
 	return e(HTML.StyleProvider, {
-		CSS = `#sample \{ width: 100%; height: 100%; background-color: {background}; color: {foreground}; border-radius: {props.Radius or 8}px; \} #sample:hover \{ border-width: 1px; border-color: #6085ee; \} #sample:disabled \{ background-color: #c6cddd; color: #707a90; \} #sample:focus \{ border-width: 2px; border-color: #315fe8; \}`,
+		CSS = {
+			["#sample"] = {
+				Width = "100%",
+				Height = "100%",
+				BackgroundColor = background,
+				Color = foreground,
+				BorderRadius = props.Radius or 8,
+			},
+			["#sample:Hover"] = { BorderWidth = 1, BorderColor = "#6085ee" },
+			["#sample:Disabled"] = { BackgroundColor = "#c6cddd", Color = "#707a90" },
+			["#sample:Focus, #sample:Hover:Focus"] = { BorderWidth = 2, BorderColor = "#315fe8" },
+		},
 	}, {
 		Stage = e(
 			PreviewStage,

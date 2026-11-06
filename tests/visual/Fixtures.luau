@@ -94,7 +94,7 @@ return {
 	Width = 1008,
 	Height = 744,
 	Cases = cases,
-	CSS = [[
+	CSSText = [[
 		article, #flex, #text, #form, #meters, #spacing { width: 280px; }
 		#article { height: 176px; padding: 16px; gap: 10px; background-color: #edf2fc;
 			color: #25314b; border-radius: 18px 4px 18px 4px; box-shadow: 0px 5px 12px #00000026; }

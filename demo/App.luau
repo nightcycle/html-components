@@ -79,7 +79,7 @@ return function()
 			{
 				Text = name,
 				LayoutOrder = index,
-				Css = {
+				CSS = {
 					BackgroundColor = if category == name then "#536cff" else "#202e49",
 					Color = "#e3eaff",
 					Height = 36,
@@ -99,7 +99,7 @@ return function()
 			{
 				Sidebar = e(
 					HTML.Nav,
-					{ Position = UDim2.fromOffset(24, 24), Size = UDim2.new(0, 172, 1, -48), Css = { Gap = 8 } } :: HTML.ContainerProperties,
+					{ Position = UDim2.fromOffset(24, 24), Size = UDim2.new(0, 172, 1, -48), CSS = { Gap = 8 } } :: HTML.ContainerProperties,
 					{
 						Brand = e(
 							HTML.H2,
@@ -112,7 +112,7 @@ return function()
 						Space = e(HTML.Br, { LayoutOrder = 3 } :: HTML.ContainerProperties),
 						Filters = e(
 							HTML.Div,
-							{ LayoutOrder = 4, Css = { Gap = 6 } } :: HTML.ContainerProperties,
+							{ LayoutOrder = 4, CSS = { Gap = 6 } } :: HTML.ContainerProperties,
 							filters
 						),
 						Theme = e(
@@ -157,7 +157,7 @@ return function()
 							OnInput = setQuery,
 							Position = UDim2.fromOffset(24, 112),
 							Size = UDim2.new(1, -48, 0, 40),
-							Css = { BorderRadius = 8 },
+							CSS = { BorderRadius = 8 },
 						} :: HTML.InputProperties
 					),
 					Gallery = e(RobloxComponents.ScrollingFrame({

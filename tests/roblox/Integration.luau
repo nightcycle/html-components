@@ -19,14 +19,14 @@ return function(): string
 			assert(host:IsA("GuiObject"), entry.Tag)
 			assert(ref.current == host, `Ref did not reach {entry.Tag}`)
 		end
-		local function render(css: string, disabled: boolean?)
+		local function render(css: HTML.StyleMap, disabled: boolean?)
 			ReactRoblox.act(function()
 				root:render(e(HTML.StyleProvider, { CSS = css }, {
 					Panel = e(
 						HTML.Div,
 						{
 							Id = "panel",
-							Css = {
+							CSS = {
 								Padding = 12,
 								BorderRadius = 10,
 								BorderTopRightRadius = 2,
@@ -47,7 +47,7 @@ return function(): string
 				}))
 			end)
 		end
-		render("#panel { color: #ff0000; } #panel > p { font-size: 24px; }")
+		render({ ["#panel"] = { Color = "#ff0000" }, ["#panel > P"] = { FontSize = 24 } })
 		local panel = container:FindFirstChild("panel") :: Frame
 		local title = panel:FindFirstChild("title") :: TextLabel
 		assert(title.TextColor3 == Color3.fromRGB(255, 0, 0) and math.abs(title.TextSize - 24 * 1.257) <= 0.5)
@@ -55,7 +55,7 @@ return function(): string
 		local corner = panel:FindFirstChildWhichIsA("UICorner") :: UICorner
 		assert(corner.TopLeftRadius.Offset == 10 and corner.TopRightRadius.Offset == 2)
 		assert(panel:FindFirstChildWhichIsA("UIShadow"), "Native shadow missing")
-		render("#panel { color: #0000ff; } button:disabled { background-color: #555555; }", true)
+		render({ ["#panel"] = { Color = "#0000ff" }, ["Button:Disabled"] = { BackgroundColor = "#555555" } }, true)
 		assert(title.TextColor3 == Color3.fromRGB(0, 0, 255), "Context update did not propagate")
 		local button = panel:FindFirstChild("button") :: TextButton
 		assert(not button.Interactable and button.BackgroundColor3 == Color3.fromRGB(85, 85, 85))
@@ -80,7 +80,7 @@ return function(): string
 			root:render(e(
 				HTML.StyleProvider,
 				{
-					CSS = "button { color: #ff0000; }",
+					CSS = { Button = { Color = "#ff0000" } },
 					Children = e(HTML.Div, parentProperties),
 				} :: HTML.StyleProviderProperties
 			))

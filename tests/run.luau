@@ -81,6 +81,59 @@ check(
 check(CSS.parseSelector("article:hover > p").Parts[1].Tag == "Article", "HTML tag selectors normalize to PascalCase")
 check(CSS.parseSelector("article:hover > p").Parts[1].States[1] == "Hover", "Selector states normalize to PascalCase")
 check(CSS.parseSelector("article:hover > p").Parts[2].Relation == "Child", "Selector relations normalize to PascalCase")
+local mapped = CSS.fromMap({
+	Button = { FontWeight = "Bold", Padding = 8, BorderRadius = 12 },
+	[".Primary"] = { FontSize = 18 },
+	[".Card > Button.Primary:Hover"] = { BackgroundColor = "blue" },
+})
+local mapNode = { Tag = "Button", Classes = { "Primary" }, Hover = true }
+local mapAncestors = { { Tag = "Div", Classes = { "Card" } } }
+local function mapResolve(sheet: unknown)
+	return CSS.resolve({ sheet }, mapNode, mapAncestors, {}, {}, nil)
+end
+local mapStyle = mapResolve(mapped)
+check(#mapped.Diagnostics == 0 and #mapped.Rules == 3, "Typed selector map compiles without diagnostics")
+check(mapStyle.FontWeight == "Bold" and mapStyle.FontSize == 18, "PascalCase table values")
+check(mapStyle.BackgroundColor == "blue", "PascalCase tags, child relations, compound classes and hover")
+check(mapStyle.PaddingLeft == 8 and mapStyle.BorderTopRightRadius == 12, "Map shorthand normalization")
+check(mapResolve(CSS.fromMap({ ["Input, Button"] = { Height = 44 } })).Height == 44, "Map selector groups")
+check(
+	#CSS.fromMap({ button = { Color = "red" }, ["Button:hover"] = { Color = "blue" } }).Diagnostics == 2,
+	"Map tags and states must use PascalCase"
+)
+check(
+	#CSS.fromMap({ [".Primary"] = { fontSize = 18 } }).Diagnostics == 1,
+	"Misspelled map fields diagnose instead of silently disappearing"
+)
+check(
+	mapResolve(CSS.fromMap({ [".primary"] = { Color = "red" } })).Color == nil,
+	"Class identifiers remain case-sensitive"
+)
+local first = CSS.fromMap({ [".Primary"] = { Color = "red" }, [".Other"] = { Color = "blue" } })
+local second = CSS.fromMap({ [".Other"] = { Color = "blue" }, [".Primary"] = { Color = "red" } })
+mapNode.Classes = { "Primary", "Other" }
+check(
+	mapResolve(first).Color == "red" and mapResolve(second).Color == "red",
+	"Equal-specificity map ties use alphabetical selector order"
+)
+check(
+	mapResolve(CSS.fromMap({ [".Other.Primary"] = { Color = "blue" }, [".Primary"] = { Color = "red" } })).Color
+		== "blue",
+	"Specificity still takes priority over alphabetical order"
+)
+local original: { [string]: { [string]: number } } = { Button = { Padding = 8 } }
+CSS.fromMap(original)
+check(original.Button.PaddingLeft == nil, "Compiling a map never mutates the caller's style tables")
+check(
+	CSS.resolve(
+		{ mapped, CSS.parse("button { color: red !important; }") },
+		mapNode,
+		mapAncestors,
+		{},
+		{ Color = "blue" }
+	).Color == "red",
+	"Imported important rules still compose with table styles"
+)
 for _, spec in require("../scripts/tags") do
 	check(
 		fs.isFile(`src/React/Component/{spec.Name}/init.luau`)

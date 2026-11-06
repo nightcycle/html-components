@@ -25,16 +25,19 @@ local e = React.createElement
 
 return function()
 	return e(HTML.StyleProvider, {
-		CSS = [[
-			.card { padding: 24px; gap: 12px; background-color: #f1f4fb;
-				border-radius: 20px 6px 20px 6px;
-				box-shadow: 0px 8px 20px #00000030; }
-			.card > h2 { color: #315fe8; }
-			.card button:hover { background-color: #5479ff; }
-		]],
+		CSS = {
+			[".Card"] = {
+				Padding = 24, Gap = 12, BackgroundColor = "#f1f4fb",
+				BorderTopLeftRadius = 20, BorderTopRightRadius = 6,
+				BorderBottomRightRadius = 20, BorderBottomLeftRadius = 6,
+				BoxShadow = "0px 8px 20px #00000030",
+			},
+			[".Card > H2"] = { Color = "#315fe8" },
+			[".Card Button:Hover"] = { BackgroundColor = "#5479ff" },
+		},
 	}, {
 		Card = e(HTML.Article, {
-			ClassName = "card",
+			ClassName = "Card",
 			Size = UDim2.fromOffset(460, 280),
 		} :: HTML.ContainerProperties, {
 			Title = e(HTML.H2, { Text = "Hello, Roblox", LayoutOrder = 1 } :: HTML.TextProperties),
@@ -53,25 +56,31 @@ end
 Following `open-shl`, components expose a `Properties` type, return a React element, and construct their host with the typed instance builders. Every component's properties are exported from the public Wally header as `ComponentNameProperties`: for example, `HTML.DivProperties`, `HTML.H2Properties`, `HTML.TextareaProperties`, and `HTML.StyleProviderProperties`. The shared host-family properties remain available too. Consumers never need to index a Wally submodule for types.
 
 - Components and tag identifiers use PascalCase (`HTML.Div`, `HTML.Tags.Div`, `HTML.Tags.H1`, `HTML.Textarea`). `HTML.Tag` is the exported tag union. `HTML.Catalog` lists PascalCase tags, component names, and renderer kinds. Raw CSS selectors retain normal HTML syntax (`div`, `h1`) and normalize during parsing.
-- HTML-facing props are `Id`, `ClassName`, `Css`, `Hidden`, `Text`, `Src`, `Href`, `Value`, and the control-specific props below. A future parser must normalize lowercase HTML attributes into this API.
-- `Css` is a typed inline `HTML.Style` record. It is named separately from Roblox's native `Frame.Style`/`TextButton.Style` enum property.
+- HTML-facing props are `Id`, `ClassName`, `CSS`, `Hidden`, `Text`, `Src`, `Href`, `Value`, and the control-specific props below. A future parser must normalize lowercase HTML attributes into this API.
+- `CSS` is a typed inline `HTML.Style` record. It is named separately from Roblox's native `Frame.Style`/`TextButton.Style` enum property.
 - Style fields and option values use PascalCase: `{ FontSize = 16, Display = "Flex", JustifyContent = "SpaceBetween" }`. Every string union has its own public type, including `HTML.Display`, `HTML.FontFamily`, `HTML.TextAlign`, `HTML.SelectorRelation`, and `HTML.RenderKind`. CSS text still uses `font-size: 16px; display: flex; justify-content: space-between`.
 - Native host properties, non-string React event/change keys, and native children are forwarded through `typed-instance-components`. Explicit native properties override CSS-derived values. `Hidden`/`display: none` and disabled controls remain enforced.
 - `Ref` reaches the actual root `GuiObject`. Use the capitalized prop; React's reserved `ref` is not forwarded by function components. Internal state listeners compose with incoming native listeners.
 - Pass text through `Text`, and UI descendants through `Children` or the third argument to `createElement`. The React boundary adapts its reserved lowercase key internally. Raw string children are unsupported by ReactRoblox. Use `LayoutOrder` for deterministic sibling flow.
 - Treat stylesheet and inline style tables as immutable. Replace them when changing styles.
 
-`StyleProvider` accepts a CSS string and/or a precompiled stylesheet. Nested providers append rules while retaining ancestry and inherited typography. They introduce no Roblox instance:
+`StyleProvider.CSS` accepts a selector map of type `HTML.StyleMap`. Tag names and pseudo states use PascalCase (`Button:Hover`, `Input:Focus`, `Button:Disabled`). Class names and IDs are case-sensitive identifiers that must match `ClassName` and `Id`. Nested providers append rules while retaining ancestry and inherited typography. They introduce no Roblox instance:
 
 ```luau
-local sheet = HTML.CSS.parse("p { color: #315fe8; }")
-for _, diagnostic in sheet.Diagnostics do
-	warn(diagnostic.Message, diagnostic.Source)
-end
-local element = e(HTML.StyleProvider, { StyleSheet = sheet }, children)
+local css: HTML.StyleMap = {
+	[".Primary"] = { FontSize = 16 },
+	Button = { FontWeight = "Bold" },
+	["Button:Hover"] = { BackgroundColor = "#315fe8" },
+}
+local properties: HTML.StyleProviderProperties = { CSS = css }
+local element = e(HTML.StyleProvider, properties, children)
 ```
 
-The cascade is inherited typography → tag defaults → matching normal rules (specificity, then source order) → inline `Css` → matching `!important` declarations. Native props are the final Roblox escape hatch. Unsupported CSS is omitted with diagnostics; providers also log these diagnostics once when their stylesheet inputs change.
+Map keys are sorted alphabetically: when two selectors have equal specificity, the alphabetically later key wins. Table insertion order and `ClassName` order do not affect the result. Use more specific selectors to express an override. Comma-separated selector groups are supported. Map declarations use the same PascalCase fields and option values as inline `CSS`; unsupported fields and selectors produce diagnostics.
+
+`HTML.CSS.fromMap(css)` compiles a map for the optional `StyleSheet` prop. For importing browser CSS, `HTML.CSS.parse(text)` remains available and preserves textual source order and `!important`; pass its returned table through `StyleSheet`. The `CSS` provider prop accepts a selector map, not a string.
+
+The cascade is inherited typography → tag defaults → matching normal rules (specificity, then source order) → inline `CSS` → matching `!important` declarations. Native props are the final Roblox escape hatch. Unsupported CSS is omitted with diagnostics; providers also log these diagnostics once when their stylesheet inputs change.
 
 Style contexts hold stable subscription scopes. Stylesheet updates compare each element's resolved style field by field and schedule React updates only for changed results. Changing `.notice` leaves unrelated elements out of React rendering; inherited typography still reaches descendants that have not overridden it. Ancestor state and class changes still affect descendant selectors. A local background or padding change does not propagate to descendants.
 
@@ -131,7 +140,7 @@ Each component exports `Properties` and an explicit component function. Shared r
 
 `scripts/tags.luau` owns the tag catalog and default styles. Run `lune run scripts/generate` after editing it; commit the component folders, header, catalog, stories, and Wally directory list together. Generated source uses the same StyLua settings as `open-shl`; the check command detects drift.
 
-Local checks cover CSS parsing/cascade/selector behavior, selective style notifications (including 500 subscribers), generated story coverage, all 63 component property exports through the package header, formatting, strict runtime **and tooling** analysis, and 14 fixtures that must fail type checking. Build checks compile the runtime and demo and verify Wally contents. GitHub CI performs these checks; it does not run Studio.
+Local checks cover CSS parsing/cascade/selector behavior, selective style notifications (including 500 subscribers), generated story coverage, all 63 component property exports through the package header, formatting, strict runtime **and tooling** analysis, and 17 fixtures that must fail type checking. Build checks compile the runtime and demo and verify Wally contents. GitHub CI performs these checks; it does not run Studio.
 
 The editor uses the Luau LSP extension's automatically updated Roblox definitions. The pinned `.tools/globalTypes-*.d.luau` file is used only by the command-line checks; loading it again through `luau-lsp.types.definitionFiles` creates conflicting enum types (`@roblox` versus `@roblox0`). After changing these settings, restart the Luau language server if old diagnostics remain.
 

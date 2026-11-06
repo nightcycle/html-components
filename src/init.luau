@@ -98,6 +98,7 @@ export type SelectorPart = Types.SelectorPart
 export type Specificity = Types.Specificity
 export type Selector = Types.Selector
 export type Rule = Types.Rule
+export type StyleMap = Types.StyleMap
 export type StyleSheet = Types.StyleSheet
 export type StyleContext = Types.StyleContext
 export type Common = Types.Common

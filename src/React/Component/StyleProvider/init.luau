@@ -20,28 +20,28 @@ export type Properties = Types.ProviderProperties
 local e = React.createElement
 -- Class
 return function(props: Properties): React.ReactNode
-	local parsed = React.useMemo(function()
-		return if props.CSS then CSS.parse(props.CSS) else nil
+	local compiled = React.useMemo(function()
+		return if props.CSS then CSS.fromMap(props.CSS) else nil
 	end, { props.CSS or false })
 	React.useEffect(function()
-		for _, sheet in { parsed, props.StyleSheet } do
+		for _, sheet in { compiled, props.StyleSheet } do
 			if sheet then
 				for _, diagnostic in sheet.Diagnostics do
 					warn(`[HTML CSS] {diagnostic.Message}: {diagnostic.Source}`)
 				end
 			end
 		end
-	end, { parsed or false, props.StyleSheet or false })
+	end, { compiled or false, props.StyleSheet or false })
 	local sheets = React.useMemo(function(): { Types.StyleSheet }
 		local result: { Types.StyleSheet } = {}
-		if parsed then
-			table.insert(result, parsed)
+		if compiled then
+			table.insert(result, compiled)
 		end
 		if props.StyleSheet then
 			table.insert(result, props.StyleSheet)
 		end
 		return result
-	end, { parsed or false, props.StyleSheet or false } :: { unknown })
+	end, { compiled or false, props.StyleSheet or false } :: { unknown })
 	local _, scope = useStyleScope({ Sheets = sheets })
 	return e(StyleContext.Provider, { value = scope }, getChildren(props))
 end
