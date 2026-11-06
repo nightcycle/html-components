@@ -8,10 +8,10 @@ The HTML reference resets browser margins and uses border-box sizing, explicit t
 
 ```sh
 lune run scripts/visual-reference
-python scripts/capture-reference.py --font-directory PATH_TO_ROBLOX/content/fonts
+python scripts/capture-reference.py --font-directory PATH_TO_ROBLOX/content/fonts --device-scale 1.75
 ```
 
-The optional Python tools require Playwright and Pillow. Install Chromium through `python -m playwright install chromium`. Browser capture writes `build/visual/browser.png` and `browser-bounds.json`. Fonts are copied only into ignored build output, not the Wally package.
+The optional Python tools require Playwright and Pillow. Install Chromium through `python -m playwright install chromium`. Set `--device-scale` to Studio's display density (1.75 for the validated 168-DPI window). Browser capture writes `build/visual/browser.png` and `browser-bounds.json`, plus font measurements, capture metadata, and Chromium's internal meter rectangles. It asserts that the meter's bar and fill occupy the host's full height. Fonts are copied only into ignored build output, not the Wally package.
 
 ## Capturing Studio
 
@@ -46,4 +46,8 @@ At a 1510 × 1005 logical Studio viewport, the centered 1008 × 744 board matche
 - Round the outer meter-fill corners without rounding a partial-value edge.
 - Give `Br` a zero-width box and inherited line height for vertical flow.
 
-Text rasterization, shadow softness, and Chromium's native meter fill thickness still differ. The fixture captions are native debug labels, not HTML components. This comparison does not cover inline text-run layout, loaded media, hover/focus states, every font weight, or mobile safe areas. The validation used a temporary StarterGui with `ScreenInsets.None` in Edit mode; the place's orientation was LandscapeSensor. No device simulation was active, and the temporary tree was removed afterward.
+The follow-up comparison corrected two reference-harness bugs: captions previously bypassed CSS font-size conversion, and Chromium's absolutely positioned meter bar had a -10px vertical offset that clipped half of its fill. Captions now use `HTML.Span` with a 14px CSS size and an explicit SemiBold native face. The browser meter bar is explicitly anchored to its host, and its internal bar/fill rectangles are checked before capture. Browser capture uses the same 175% display density as Studio.
+
+The main card heading uses the same SourceSansPro Bold/700 face on both sides. Its text width measured 153.27 CSS pixels in Chromium and 153.71 logical pixels in Studio (0.45px difference). Element bounds do not establish glyph-level parity: Roblox quantizes TextSize to integers, glyph advances and stroke rasterization differ, and Studio screenshots pass through JPEG capture/resampling. Shadow softness also remains approximate.
+
+This comparison does not cover inline text-run layout, loaded media, hover/focus states, every font weight, or mobile safe areas. The validation used a temporary StarterGui with `ScreenInsets.None` in Edit mode; the place's orientation was LandscapeSensor. A simulator resolution probe did not change the Edit viewport; its scaling preference was restored and simulation was stopped. The temporary validation tree was removed afterward.

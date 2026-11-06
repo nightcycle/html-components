@@ -17,6 +17,8 @@ report = {"Elements": len(deltas), "MaxDelta": max(row["MaxDelta"] for row in de
 assert report["MaxDelta"] <= 1, report
 
 browser = Image.open(output / "browser.png").convert("RGB")
+capture_metadata = json.loads((output / "browser-capture.json").read_text())
+browser = browser.resize((capture_metadata["Width"], capture_metadata["Height"]), Image.Resampling.LANCZOS)
 capture = Image.open(output / "studio-after.jpg")
 board, viewport = studio["Board"], studio["Viewport"]
 sx, sy = capture.width / viewport["X"], capture.height / viewport["Y"]

@@ -24,25 +24,38 @@ local function render(node: Fixtures.Node, order: number): React.ReactNode
 	local component = assert(components[node.Tag], node.Tag)
 	local kind = kinds[node.Tag]
 	if kind == "Text" then
-		return e(component, { Id = node.Id, Text = node.Text, LayoutOrder = order } :: HTML.PProperties, children)
+		local properties: HTML.PProperties = { Id = node.Id, Text = node.Text, LayoutOrder = order }
+		return e(component, properties, children)
 	elseif kind == "Button" then
-		return e(component, { Id = node.Id, Text = node.Text, LayoutOrder = order } :: HTML.ButtonProperties, children)
+		local properties: HTML.ButtonProperties = { Id = node.Id, Text = node.Text, LayoutOrder = order }
+		return e(component, properties, children)
 	elseif kind == "Input" then
-		return e(component, { Id = node.Id, Value = node.Text, LayoutOrder = order } :: HTML.InputProperties, children)
+		local properties: HTML.InputProperties = { Id = node.Id, Value = node.Text, LayoutOrder = order }
+		return e(component, properties, children)
 	elseif kind == "Meter" then
-		return e(
-			component,
-			{ Id = node.Id, Value = node.Value, LayoutOrder = order } :: HTML.ProgressProperties,
-			children
-		)
+		local properties: HTML.ProgressProperties = { Id = node.Id, Value = node.Value, LayoutOrder = order }
+		return e(component, properties, children)
 	end
-	return e(component, { Id = node.Id, LayoutOrder = order } :: HTML.DivProperties, children)
+	local properties: HTML.DivProperties = { Id = node.Id, LayoutOrder = order }
+	return e(component, properties, children)
 end
 -- Class
 return function(): React.ReactNode
 	local cells: { [string]: React.ReactNode } = {}
 	for index, case in Fixtures.Cases do
 		local x, y = (index - 1) % 3 * 328 + 20, math.floor((index - 1) / 3) * 232 + 28
+		local titleProperties: HTML.SpanProperties = {
+			Name = "Title",
+			Position = UDim2.fromOffset(12, 8),
+			Size = UDim2.fromOffset(288, 20),
+			Text = case.Title,
+			Css = { FontSize = 14 },
+			FontFace = Font.new("rbxasset://fonts/families/SourceSansPro.json", Enum.FontWeight.SemiBold),
+			TextXAlignment = Enum.TextXAlignment.Left,
+			TextYAlignment = Enum.TextYAlignment.Top,
+			TextColor3 = Color3.fromRGB(82, 97, 124),
+			BackgroundTransparency = 1,
+		}
 		cells[`Case{index}`] = e(Roblox.Frame({
 			Name = `Case{index}`,
 			Position = UDim2.fromOffset(x, y),
@@ -50,16 +63,7 @@ return function(): React.ReactNode
 			BackgroundColor3 = Color3.new(1, 1, 1),
 			BorderSizePixel = 0,
 		}, {}, {
-			Title = e(Roblox.TextLabel({
-				Position = UDim2.fromOffset(12, 8),
-				Size = UDim2.fromOffset(288, 20),
-				Text = case.Title,
-				TextSize = 14,
-				FontFace = Font.new("rbxasset://fonts/families/SourceSansPro.json", Enum.FontWeight.SemiBold),
-				TextXAlignment = Enum.TextXAlignment.Left,
-				TextColor3 = Color3.fromRGB(82, 97, 124),
-				BackgroundTransparency = 1,
-			}, {})),
+			Title = e(HTML.Span, titleProperties),
 			Stage = e(Roblox.Frame({
 				Position = UDim2.fromOffset(16, 32),
 				Size = UDim2.fromOffset(280, 176),
@@ -73,7 +77,8 @@ return function(): React.ReactNode
 			})),
 		}))
 	end
-	return e(HTML.StyleProvider, { CSS = Fixtures.CSS } :: HTML.StyleProviderProperties, {
+	local providerProperties: HTML.StyleProviderProperties = { CSS = Fixtures.CSS }
+	return e(HTML.StyleProvider, providerProperties, {
 		Board = e(Roblox.Frame({
 			Name = "ParityBoard",
 			AnchorPoint = Vector2.new(0.5, 0.5),

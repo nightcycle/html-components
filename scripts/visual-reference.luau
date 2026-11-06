@@ -57,7 +57,8 @@ progress, meter { appearance: none; display: block; width: 100%; border: 0; over
 progress::-webkit-progress-bar { background: #e3e8f2; border-radius: inherit; }
 progress::-webkit-progress-value { background: #4168e0; border-radius: inherit; }
 meter::-webkit-meter-inner-element { display: block; height: 100%; }
-meter::-webkit-meter-bar { height: 100%; border: 0; background: #e3e8f2; border-radius: inherit; }
+meter::-webkit-meter-bar { position: absolute; inset: 0; align-self: stretch; height: 100%;
+border: 0; background: #e3e8f2; border-radius: inherit; }
 meter::-webkit-meter-optimum-value { height: 100%; background: #4168e0; border-radius: inherit; }
 img, video { display: block; }
 hr { display: block; width: 100%; height: 1px; background: #b4bed1; }
