@@ -26,6 +26,10 @@ return function(tag: Types.Tag, props: Properties, defaults: Types.Style): React
 	local _, merged =
 		RobloxComponents.Frame(native, Paint.box(state.Style, props.Id or tag) :: RobloxComponents.FrameProperties)
 	return e(
-		RobloxComponents.Frame(Root.props(merged, props, state), {}, Root.children(state, getChildren(props), true))
+		RobloxComponents.Frame(
+			Root.props(merged, props, state, true),
+			{},
+			Root.children(state, getChildren(props), true)
+		)
 	)
 end

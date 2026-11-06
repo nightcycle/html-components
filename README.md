@@ -64,6 +64,26 @@ Following `open-shl`, components expose a `Properties` type, return a React elem
 - Pass text through `Text`, and UI descendants through `Children` or the third argument to `createElement`. The React boundary adapts its reserved lowercase key internally. Raw string children are unsupported by ReactRoblox. Use `LayoutOrder` for deterministic sibling flow.
 - Treat stylesheet and inline style tables as immutable. Replace them when changing styles.
 
+### Inline layout
+
+`Span`, `Strong`, `Em`, `Code`, and the other phrasing text tags now default to `Display = "Inline"`. Adjacent and nested text shares line boxes, collapses whitespace across component boundaries, and wraps at words. A component's `Text` precedes its children. `Br` ends the current line. Set `LayoutOrder` to preserve document order.
+
+Use `InlineBlock` when a text element needs its own width, height, padding, or size constraints:
+
+```luau
+local badgeStyle: HTML.Style = {
+	Display = "InlineBlock", Width = 96, Height = 40,
+	MinWidth = 80, MaxWidth = 120, Padding = 8,
+	VerticalAlign = "Middle", BackgroundColor = "#dbeafe",
+}
+local badge: HTML.StrongProperties = { Text = "Badge", CSS = badgeStyle }
+local element = e(HTML.Strong, badge)
+```
+
+Normal inline text ignores box width/height and min/max dimensions inside a flow. Its root remains a `TextLabel`; wrapped fragments are native child labels, so nested components retain their identities and refs. `InlineBlock` remains an atomic box. `InlineFlex` combines an atomic outer box with the existing native flex layout.
+
+`LineHeight = 1.5` is a font-size multiplier; `LineHeight = "24px"` is an absolute line height. `WhiteSpace` accepts `Normal`, `Nowrap`, `Pre`, and `PreWrap`. Block margins support negative lengths, horizontal `"Auto"` centering, and adjacent sibling vertical collapse. Parent/child margin collapse is not implemented. Layout measurements are cached and geometry updates run outside React; resizing does not render every component again. See [the layout limits](docs/compatibility.md) and [the browser comparison](docs/visual-validation.md).
+
 `StyleProvider.CSS` accepts a selector map of type `HTML.StyleMap`. Tag names and pseudo states use PascalCase (`Button:Hover`, `Input:Focus`, `Button:Disabled`). Class names and IDs are case-sensitive identifiers that must match `ClassName` and `Id`. Nested providers append rules while retaining ancestry and inherited typography. They introduce no Roblox instance:
 
 ```luau
@@ -152,9 +172,10 @@ _G.__ROACT_17_MOCK_SCHEDULER__ = true
 print(require(game.ReplicatedStorage.Tests.Integration)())
 print(require(game.ReplicatedStorage.Tests.StyleUpdates)())
 print(require(game.ReplicatedStorage.Tests.Stories)())
+print(require(game.ReplicatedStorage.Tests.Layout).Verify())
 ```
 
-The tests use detached targets and clean them up. Reopen the place before normal Play testing so the mocked scheduler does not affect the demo. Development validation mounted all 62 tags, all 63 stories, and the gallery in Studio. `StyleUpdates` verifies actual render invocations and committed updates, accounting for development Strict Mode's double invocation. The shared browser/Studio visual fixtures also compare nine scenes across all eight renderer families. See [the screenshot comparison workflow and measured limits](docs/visual-validation.md).
+The tests clean up their targets; the layout test uses a temporary StarterGui so the engine can compute geometry. Reopen the place before normal Play testing so the mocked scheduler does not affect the demo. Development validation mounts all 62 tags, 64 stories (including the inline layout comparison under **HTML Components → Div → Layout**), and the gallery. `StyleUpdates` verifies actual render invocations and committed updates, accounting for development Strict Mode's double invocation. The shared browser/Studio fixtures cover the original nine scenes and nested inline layout at two widths. See [the screenshot comparison workflow and measured limits](docs/visual-validation.md).
 
 ## Releases
 

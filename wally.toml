@@ -9,6 +9,7 @@ license = "Apache-2.0"
 include = [
   "src", "src/init.luau", "src/Types.luau", "src/Catalog.luau", "src/Tag.luau", "src/Children.luau",
   "src/CSS", "src/CSS/**",
+  "src/Layout", "src/Layout/**",
   "src/React", "src/React/Context", "src/React/Context/**",
   "src/React/Hook", "src/React/Hook/**", "src/React/Render", "src/React/Render/**",
   "src/React/Component", "src/React/Component/*/init.luau",

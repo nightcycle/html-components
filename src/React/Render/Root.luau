@@ -6,6 +6,7 @@ local React = require(script.Parent.Parent.Parent.Parent.React)
 local Paint = require(script.Parent.Paint)
 -- Components
 -- Hooks
+local useFlow = require(script.Parent.Parent.Hook.useFlow)
 -- Contexts
 local StyleContext = require(script.Parent.Parent.Context.Style)
 -- Types
@@ -29,13 +30,25 @@ function Root.event<P>(props: P, key: unknown, callback: (...unknown) -> ())
 	end
 end
 
-function Root.props<P>(native: P, props: Types.Common, state: useStyle.State): P
+function Root.props<P>(native: P, props: Types.Common, state: useStyle.State, layout: boolean?): P
 	local record = (native :: unknown) :: { [unknown]: unknown }
+	local explicit = (props :: unknown) :: { [string]: unknown }
+	local size, automatic = explicit.Size, explicit.AutomaticSize
+	local textTransparency, strokeTransparency = record.TextTransparency, record.TextStrokeTransparency
+	local backgroundColor, backgroundTransparency = record.BackgroundColor3, record.BackgroundTransparency
+	record.ref = useFlow({
+		Tag = state.Tag,
+		Style = state.Style,
+		Layout = layout == true,
+		Size = if typeof(size) == "UDim2" then size else nil,
+		AutomaticSize = if typeof(automatic) == "EnumItem" then automatic :: Enum.AutomaticSize else nil,
+		TextTransparency = if type(textTransparency) == "number" then textTransparency else nil,
+		TextStrokeTransparency = if type(strokeTransparency) == "number" then strokeTransparency else nil,
+		BackgroundColor = if typeof(backgroundColor) == "Color3" then backgroundColor else nil,
+		BackgroundTransparency = if type(backgroundTransparency) == "number" then backgroundTransparency else nil,
+	}, props.Ref)
 	if props.Id and record.Name == nil then
 		record.Name = props.Id
-	end
-	if props.Ref then
-		record.ref = props.Ref
 	end
 	if props.Hidden or state.Style.Display == "None" then
 		record.Visible = false

@@ -51,3 +51,20 @@ The follow-up comparison corrected two reference-harness bugs: captions previous
 The main card heading uses the same SourceSansPro Bold/700 face on both sides. Its text width measured 153.27 CSS pixels in Chromium and 153.71 logical pixels in Studio (0.45px difference). Element bounds do not establish glyph-level parity: Roblox quantizes TextSize to integers, glyph advances and stroke rasterization differ, and Studio screenshots pass through JPEG capture/resampling. Shadow softness also remains approximate.
 
 This comparison does not cover inline text-run layout, loaded media, hover/focus states, every font weight, or mobile safe areas. The validation used a temporary StarterGui with `ScreenInsets.None` in Edit mode; the place's orientation was LandscapeSensor. A simulator resolution probe did not change the Edit viewport; its scaling preference was restored and simulation was stopped. The temporary validation tree was removed afterward.
+
+## Inline flow comparison — 2026-11-06
+
+`tests/visual/FlowFixtures.luau` now supplies a second shared reference. It exercises a paragraph with its own text plus nested Strong/Em/Span children, an independently sized Strong badge, Br, and adjacent block margins at 260px and 440px container widths. Run:
+
+```sh
+lune run scripts/flow-reference
+python scripts/capture-flow.py --font-directory PATH_TO_ROBLOX/content/fonts --device-scale 1.75
+```
+
+Mount `React.createElement(require(game.ReplicatedStorage.Tests.Layout).View)` in the temporary ScreenGui using the procedure above. This board starts at the viewport origin for deterministic screenshot cropping; the UI Labs version is centered by PreviewStage under **HTML Components → Div → Layout**. Record each pane descendant as `{ Pane, Id, Rect = { X, Y, Width, Height } }` and the camera viewport as `{ X, Y }`. Save `{ Records = records, Viewport = viewport }` to `build/visual/flow-studio.json`, and the MCP screenshot to `flow-studio.jpg`. Then run `python scripts/compare-flow.py`.
+
+At a 1510 × 965 logical Studio viewport, all 12 block/inline-block rectangles matched within **0.797px**. Paragraph line counts, container heights, block positions, the 92 × 42 badge, and the collapsed 14px margin matched. The screenshot comparison is `build/visual/flow-comparison.png`. Text-root unions are reported separately in `flow-comparison.json`: their largest difference was 8.578px, accumulated across styled runs. Native font hinting, per-run advances and integer TextSize still prevent glyph-level parity. Measurements must use the rendered font size; oversampling TextService at a larger size compressed inter-element spaces in the screenshot and was rejected.
+
+The original nine-scene reference was also recaptured: all 26 rectangles still matched within 0.0001px. Those fixtures now explicitly request flex-column stacks, block underline text, and a 20px spacer in the flex example so their reference does not depend on the former block defaults for inline tags.
+
+`Tests.Layout.Verify()` additionally checks parent resizing without a React update, native text invalidation, auto-margin centering, Inline/InlineBlock/None transitions, dimensions/constraints, native TextScaled, and fragment backgrounds. All 64 stories and the gallery mounted; selective React-render tests still passed. These checks used Edit mode, temporary StarterGuis with `ScreenInsets.None`, and the existing LandscapeSensor orientation. No device-simulator settings were changed; temporary instances were removed afterward. This is a tested subset at two widths, not a guarantee for arbitrary imported HTML.

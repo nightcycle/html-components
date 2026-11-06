@@ -96,6 +96,7 @@ return {
 	Cases = cases,
 	CSSText = [[
 		article, #flex, #text, #form, #meters, #spacing { width: 280px; }
+		#article, #text, #form, #meters, #spacing { display: flex; flex-direction: column; }
 		#article { height: 176px; padding: 16px; gap: 10px; background-color: #edf2fc;
 			color: #25314b; border-radius: 18px 4px 18px 4px; box-shadow: 0px 5px 12px #00000026; }
 		#heading { font-size: 24px; height: 28px; }
@@ -107,7 +108,7 @@ return {
 		#text { gap: 10px; height: 156px; color: #25314b; }
 		#textHeading { height: 28px; }
 		#wrapped { width: 240px; height: 48px; }
-		#underline { height: 24px; }
+		#underline { display: block; height: 24px; }
 		#button { width: 240px; height: 44px; }
 		#form { height: 164px; gap: 16px; }
 		#input { height: 40px; border-radius: 8px; }
@@ -121,5 +122,6 @@ return {
 		#spacing { height: 112px; gap: 8px; }
 		#above, #below { height: 24px; }
 		#rule { height: 1px; }
+		#break { height: 20px; }
 	]],
 }

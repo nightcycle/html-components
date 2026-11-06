@@ -11,7 +11,7 @@ local render = require(script.Parent.Parent.Render.Spacer)
 local Types = require(script.Parent.Parent.Parent.Types)
 export type Properties = Types.ContainerProperties
 -- Constants
-local DEFAULT_STYLE: Types.Style = { Width = 0 }
+local DEFAULT_STYLE: Types.Style = { Display = "Inline", Width = 0 }
 -- Variables
 -- References
 -- Private Functions

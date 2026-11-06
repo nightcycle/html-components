@@ -25,7 +25,10 @@ for _, child in packageRoot:GetDescendants() do
 	assert(not child.Name:find(".story", 1, true), "Stories leaked into runtime model")
 	compile(child)
 end
-assert(packageRoot:FindFirstChild("CSS") and packageRoot:FindFirstChild("React"), "Missing runtime modules")
+assert(
+	packageRoot:FindFirstChild("CSS") and packageRoot:FindFirstChild("React") and packageRoot:FindFirstChild("Layout"),
+	"Missing runtime modules"
+)
 local place = roblox.deserializePlace(fs.readFile("build/html-components-demo.rbxl"))
 local storage = assert(place:FindFirstChild("ReplicatedStorage"))
 assert(assert(assert(storage:FindFirstChild("Packages")):FindFirstChild("HTMLComponents")):IsA("ModuleScript"))
@@ -54,5 +57,10 @@ for _, line in string.split(paths, "\n") do
 end
 for _, spec in require("./tags") do
 	assert(paths:find(`src/React/Component/{spec.Name}/init.luau`, 1, true), `Missing packaged component {spec.Tag}`)
+end
+for _, path in
+	{ "src/Layout/Flow.luau", "src/Layout/Host.luau", "src/Layout/Metrics.luau", "src/React/Hook/useFlow.luau" }
+do
+	assert(paths:find(path, 1, true), `Missing packaged layout module {path}`)
 end
 print(`Built and compiled {moduleCount} scripts across package and demo; Wally contents verified.`)

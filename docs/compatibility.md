@@ -20,7 +20,7 @@ This library provides visual mappings and a documented CSS subset. The component
 | `img` | ImageLabel | Roblox image URI; `ScaleType` escape hatch. `Alt` is metadata, not a browser accessibility tree or automatic fallback. No web-image downloading. |
 | `video` | VideoFrame | Roblox video URI and play/loop/mute properties. No browser codecs, web streams, poster/track controls, or automatic transport UI. |
 | `progress meter` | Frame | Determinate clamped fill. No indeterminate animation or HTML low/high/optimum semantics. |
-| `hr br` | Frame | 1px separator or a zero-width spacer using the inherited font's line height (20px for the default 16px sans-serif font); not an inline line-breaking algorithm. Explicit CSS dimensions remain available. |
+| `hr br` | Frame | `hr` is a block separator. `br` forces a line break in a flow container, using the inherited line height. |
 
 Other tags are absent from `HTML.Tags`. In particular: document metadata/scripts/styles, embedded documents, audio, canvas, SVG/MathML, tables, select/option, details/summary, dialog, template/slot, ruby, and browser-specific APIs are not implemented. Do not silently substitute a supported tag when its behavior matters.
 
@@ -30,11 +30,14 @@ Selectors: type, `*`, `.class`, `#id`, compound selectors, comma-separated selec
 
 | Properties | Accepted values / implementation |
 | --- | --- |
-| `display` | `block`, `flex`, `none`. Hiding removes the root from Roblox layout via `Visible`. |
-| `width`, `height` | Pixel numbers/`px`, `%`, `auto`; UDim2 and AutomaticSize. Default width fills the parent and default height grows with content. |
+| `display` | `block`, `inline`, `inline-block`, `flex`, `inline-flex`, `none`. Normal flow uses measured line boxes; flex uses UIListLayout. Hidden roots contribute no layout. |
+| `width`, `height` | Pixel numbers/`px`, `%`, `auto`. Block width fills its container; inline-block auto width is capped max-content width. Normal non-replaced inline text ignores these dimensions. Sizes currently use border-box semantics. |
 | `min-width`, `min-height`, `max-width`, `max-height` | Nonnegative pixels; UISizeConstraint. |
 | `padding`, four padding sides | 1–4 nonnegative pixel/percentage values for the shorthand; UIPadding. |
-| `gap` | Nonnegative pixel/percentage length; UIListLayout.Padding. |
+| `margin`, four margin sides | Pixel/percentage lengths, including negatives; `auto` horizontal margins center or push a specified-width block. Adjacent block sibling vertical margins collapse. Parent/child and empty-block collapse are not implemented. |
+| `gap` | Nonnegative pixel/percentage length; UIListLayout.Padding in flex. Retained as an extension between adjacent block children for compatibility; browser normal flow ignores gap. |
+| `line-height` | `normal`, nonnegative unitless multiplier, or pixels. Inherited. Inline table form uses `"Normal"`, a number multiplier, or a `"24px"` string. |
+| `vertical-align` | `baseline`, `top`, `middle`, `bottom` for inline fragments and inline blocks. Baselines use bundled font metrics. |
 | `flex-direction`, `flex-wrap` | `row`/`column`, `nowrap`/`wrap`. Default flex direction is row. |
 | `justify-content` | `flex-start`, `center`, `flex-end`, `space-between`, `space-around`, `space-evenly`; native list/flex alignment. |
 | `align-items` | `flex-start`, `center`, `flex-end`; native cross-axis alignment. |
@@ -44,7 +47,7 @@ Selectors: type, `*`, `.class`, `#id`, compound selectors, comma-separated selec
 | `font-family` | `sans-serif`, `serif`, `monospace`; SourceSansPro, Merriweather, RobotoMono. |
 | `font-weight`, `font-style` | `normal`/`bold`, `normal`/`italic`. |
 | `text-align`, `text-decoration` | `left`/`center`/`right`; `none`/`underline`/`line-through`. Decoration escapes text before adding Roblox RichText markup. |
-| `white-space` | `normal`, `pre`, `nowrap`; controls wrapping only. Supply normalized whitespace yourself. |
+| `white-space` | `normal`, `pre`, `pre-wrap`, `nowrap`. Flowing text collapses ASCII spaces/tabs/newlines across element boundaries or preserves them in pre modes. Tabs currently use four spaces, not CSS tab stops. |
 | `border-width` | Nonnegative pixels; UIStroke with Border apply mode and Inner border position. |
 | `border-radius`, four corner radii | Shorthand accepts 1–4 nonnegative lengths. Individual UICorner radii; one circular radius per corner, no elliptical `/` syntax. |
 | `box-shadow` | One shadow: `[inset] x y blur [spread] color`, pixel lengths, nonnegative blur, color last; or `none`. Maps to UIShadow. |
@@ -52,9 +55,19 @@ Selectors: type, `*`, `.class`, `#id`, compound selectors, comma-separated selec
 
 Inline `CSS` uses PascalCase fields (`BackgroundColor`, `BorderTopRightRadius`) and PascalCase option values (`Display = "Flex"`, `FontFamily = "SansSerif"`). Named option types and all `ComponentNameProperties` types are exported directly from the package header. Numbers are pixels for lengths. Inline `Padding` and `BorderRadius` are a single length; use the side/corner fields for asymmetry. Raw HTML/CSS syntax is unchanged. Native property types remain those supplied by typed-instance-components.
 
-Only color, font properties, text alignment, and whitespace inherit. Borders, backgrounds, padding, dimensions, and layout do not. Text decoration is local in this version. Styles are authored in React; this package does not install a Roblox StyleSheet/StyleLink or arbitrate concurrent engine styling of the same properties.
+Only color, font properties, line height, text alignment, and whitespace inherit. Borders, backgrounds, padding, dimensions, and layout do not. Text decoration is local in this version. Styles are authored in React; this package does not install a Roblox StyleSheet/StyleLink or arbitrate concurrent engine styling of the same properties.
 
-There is no CSS margin/collapsing, content-box sizing, inline formatting across separate text nodes, positioned layout, flex-grow/shrink/basis, CSS grid, media/container queries, variables, at-rules, pseudo-elements, attribute/sibling selectors, transitions, animations, gradients, filters, transforms, multiple shadows, group opacity, or full CSS grammar. Unsupported declarations/selectors produce diagnostics. Unsupported at-rules are skipped as a whole. Valid declarations in a supported rule still apply.
+There is no content-box sizing, positioned layout, flex-grow/shrink/basis, CSS grid, media/container queries, variables, at-rules, pseudo-elements, attribute/sibling selectors, transitions, animations, gradients, filters, transforms, multiple shadows, group opacity, or full CSS grammar. Unsupported declarations/selectors produce diagnostics. Unsupported at-rules are skipped as a whole. Valid declarations in a supported rule still apply.
+
+## Inline formatting and remaining limits
+
+Phrasing text tags default to `Inline`; paragraphs, headings and semantic containers remain blocks. A text component's own `Text` comes before its children. Nested inline text joins its parent's formatting context without losing its native root or CSS ancestry. Whitespace can cross element boundaries, but a style boundary alone cannot break a word. `InlineBlock` keeps its dimensions/constraints and wraps as one box. `InlineFlex` uses that outer behavior with a native inner list layout. Controls and media retain their existing default dimensions/display in this release; set `Display` explicitly when translating browser defaults.
+
+Layout runs after React commits, uses cached TextService measurements, and updates on parent size, text, typography, visibility, and order changes. A geometry update does not schedule React renders. It currently recomputes the affected HTML root's flow, so it is not an incremental browser layout engine. Native-only children keep their own positioning and are not included in normal HTML flow; wrap them in an HTML container when they must occupy flow space.
+
+The root of a wrapped inline element is the union of its fragment rectangles. Its hover/hit region is therefore rectangular, including gaps between lines. The renderer owns child positions, sizes and the root text transparency while drawing fragment labels; read the root `Text` for content. Native `TextScaled` retains engine text rendering. Inline backgrounds follow text fragments, but inline padding, borders, corners and shadows do not yet implement CSS box-decoration slicing. Use `InlineBlock` for a complete decorated box. Arbitrary native RichText formatting inside `Text`, native text alignment/scaling combined with fragmented children, custom-font baseline metrics, and UIScale-aware line measurement are not full parity paths.
+
+Line breaking currently targets left-to-right text with whitespace-delimited words. CJK line-break rules, bidi, hyphenation, soft hyphens, `word-break`, `overflow-wrap`, browser whitespace edge cases, and full min-content shrink-to-fit are not implemented. An oversized unbroken word overflows. Block descendants inside an inline ancestor also need browser-style anonymous box splitting before they can be imported faithfully. These limits are not detected by the CSS parser; an importer must expose them rather than claim general HTML compatibility.
 
 ## Engine differences
 
@@ -74,4 +87,4 @@ The connected Studio successfully created UIShadow, independent UICorner radii, 
 
 ## Future HTML importer
 
-An importer can normalize attributes, dispatch known tags through `HTML.Tags`, assign LayoutOrder from document order, translate text runs into `Text`, and pass parsed stylesheets to StyleProvider. It must explicitly report unsupported tags, attributes, CSS, and browser behaviors. Mixed inline markup needs a separate rich-text/run-layout design before general HTML can be represented faithfully. HTML tokenization, entities, error recovery, resource loading, DOM events, and sanitization are intentionally outside this package's current API.
+An importer can normalize attributes, dispatch known tags through `HTML.Tags`, assign LayoutOrder from document order, represent mixed text as ordered Span/Strong/etc. children, and pass parsed stylesheets to StyleProvider. It must explicitly report unsupported tags, attributes, CSS, and browser behaviors. The shared inline formatter supplies the first mixed-text foundation. The next layout priorities are content-box sizing, min-content sizing, flex grow/shrink/basis, browser default styles and broader line-breaking rules. HTML tokenization, entities, error recovery, resource loading, DOM events, and sanitization remain outside this package's current API.

@@ -8,7 +8,8 @@
       "Stories": { "$path": "stories" },
       "Demo": { "$path": "demo/App.luau" },
       "Tests": { "$path": "tests/roblox" },
-      "VisualFixtures": { "$path": "tests/visual/Fixtures.luau" }
+      "VisualFixtures": { "$path": "tests/visual/Fixtures.luau" },
+      "FlowFixtures": { "$path": "tests/visual/FlowFixtures.luau" }
     },
     "StarterPlayer": {
       "StarterPlayerScripts": { "HTMLDemo": { "$path": "demo/Main.client.luau" } }

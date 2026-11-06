@@ -73,6 +73,7 @@ local Video = require(script.React.Component.Video)
 -- Types
 local Types = require(script.Types)
 export type Display = Types.Display
+export type VerticalAlign = Types.VerticalAlign
 export type FlexDirection = Types.FlexDirection
 export type FlexWrap = Types.FlexWrap
 export type JustifyContent = Types.JustifyContent

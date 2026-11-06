@@ -1,8 +1,35 @@
 --!strict
 export type Spec = { Tag: string, Name: string, Kind: string, Defaults: string? }
 local specs: { Spec } = {}
+local INLINE = {
+	span = true,
+	label = true,
+	abbr = true,
+	time = true,
+	output = true,
+	b = true,
+	strong = true,
+	i = true,
+	em = true,
+	cite = true,
+	var = true,
+	s = true,
+	del = true,
+	u = true,
+	ins = true,
+	code = true,
+	kbd = true,
+	samp = true,
+	small = true,
+	mark = true,
+	q = true,
+	br = true,
+}
 local function add(tag: string, name: string, kind: string, defaults: string?)
 	assert(string.lower(name) == tag, "Component name must match its HTML tag")
+	if INLINE[tag] then
+		defaults = (defaults or "{}"):gsub("^{", '{ Display = "Inline",', 1)
+	end
 	table.insert(specs, { Tag = name, Name = name, Kind = kind:sub(1, 1):upper() .. kind:sub(2), Defaults = defaults })
 end
 for _, tag in

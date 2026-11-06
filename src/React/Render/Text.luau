@@ -28,9 +28,9 @@ return function(tag: Types.Tag, props: Properties, defaults: Types.Style): React
 	local _, merged = RobloxComponents.TextLabel(native, Paint.text(state.Style, props.Id or tag, props.Text or ""))
 	return e(
 		RobloxComponents.TextLabel(
-			Root.props(merged, props, state),
+			Root.props(merged, props, state, true),
 			{},
-			Root.children(state, getChildren(props), false)
+			Root.children(state, getChildren(props), true)
 		)
 	)
 end

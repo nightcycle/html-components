@@ -5,6 +5,7 @@ local run = require("./shared/run")
 run("lune", { "run", "scripts/generate", "--check" })
 run("lune", { "run", "tests/run" })
 run("lune", { "run", "tests/style-updates" })
+run("lune", { "run", "tests/flow" })
 run("lune", { "run", "tests/release" })
 run("stylua", { "--check", "src", "stories", "demo", "scripts", "tests" })
 run("luau-lsp", {
@@ -14,6 +15,7 @@ run("luau-lsp", {
 	"scripts",
 	"tests/run.luau",
 	"tests/style-updates.luau",
+	"tests/flow.luau",
 	"tests/release.luau",
 	"tests/load.luau",
 	"tests/Datatypes.luau",

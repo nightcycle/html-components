@@ -11,6 +11,7 @@ local useStyleScope = require(script.Parent.useStyleScope)
 -- Types
 local Types = require(script.Parent.Parent.Parent.Types)
 export type State = {
+	Tag: Types.Tag,
 	Style: Types.Style,
 	Context: StyleStore.Scope,
 	SetHover: (boolean) -> (),
@@ -41,6 +42,7 @@ return function(tag: Types.Tag, props: Types.Common, defaults: Types.Style, disa
 	}
 	local style, scope = useStyleScope({ Node = node, Defaults = defaults, Inline = props.CSS })
 	return {
+		Tag = tag,
 		Style = style,
 		Context = scope,
 		SetHover = setHover,

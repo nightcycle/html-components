@@ -3,7 +3,8 @@ local React = require(script.Parent.Parent.React)
 local Roblox = require(script.Parent.Parent.RobloxComponents)
 local Tag = require(script.Parent.Tag)
 
-export type Display = "Block" | "Flex" | "None"
+export type Display = "Block" | "Inline" | "InlineBlock" | "Flex" | "InlineFlex" | "None"
+export type VerticalAlign = "Baseline" | "Top" | "Middle" | "Bottom"
 export type FlexDirection = "Row" | "Column"
 export type FlexWrap = "Nowrap" | "Wrap"
 export type JustifyContent = "FlexStart" | "Center" | "FlexEnd" | "SpaceBetween" | "SpaceAround" | "SpaceEvenly"
@@ -13,7 +14,7 @@ export type FontWeight = "Normal" | "Bold"
 export type FontStyle = "Normal" | "Italic"
 export type TextAlign = "Left" | "Center" | "Right"
 export type TextDecoration = "None" | "Underline" | "LineThrough"
-export type WhiteSpace = "Normal" | "Pre" | "Nowrap"
+export type WhiteSpace = "Normal" | "Pre" | "PreWrap" | "Nowrap"
 export type Overflow = "Visible" | "Hidden"
 export type SelectorRelation = "Descendant" | "Child"
 export type SelectorState = "Hover" | "Active" | "Focus" | "Disabled"
@@ -37,6 +38,13 @@ export type Style = {
 	PaddingBottom: Length?,
 	PaddingLeft: Length?,
 	Gap: Length?,
+	Margin: Length?,
+	MarginTop: Length?,
+	MarginRight: Length?,
+	MarginBottom: Length?,
+	MarginLeft: Length?,
+	LineHeight: Length?,
+	VerticalAlign: VerticalAlign?,
 	FlexDirection: FlexDirection?,
 	FlexWrap: FlexWrap?,
 	JustifyContent: JustifyContent?,

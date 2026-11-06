@@ -92,12 +92,15 @@ function Paint.children(style: Types.Style, layout: boolean): { [string]: React.
 		return UDim.new(length.Scale, length.Offset + border)
 	end
 	if
-		border > 0
-		or style.Padding
-		or style.PaddingTop
-		or style.PaddingRight
-		or style.PaddingBottom
-		or style.PaddingLeft
+		style.Display ~= "Inline"
+		and (
+			border > 0
+			or style.Padding
+			or style.PaddingTop
+			or style.PaddingRight
+			or style.PaddingBottom
+			or style.PaddingLeft
+		)
 	then
 		children.Padding = e(RobloxComponents.UIPadding({
 			PaddingTop = inset(style.PaddingTop or style.Padding or 0),
@@ -144,15 +147,15 @@ function Paint.children(style: Types.Style, layout: boolean): { [string]: React.
 			}, {}))
 		end
 	end
-	if style.MinWidth or style.MinHeight or style.MaxWidth or style.MaxHeight then
+	if style.Display ~= "Inline" and (style.MinWidth or style.MinHeight or style.MaxWidth or style.MaxHeight) then
 		local minX, minY = style.MinWidth or 0, style.MinHeight or 0
 		children.Constraint = e(RobloxComponents.UISizeConstraint({
 			MinSize = Vector2.new(minX, minY),
 			MaxSize = Vector2.new(math.max(minX, style.MaxWidth or 100000), math.max(minY, style.MaxHeight or 100000)),
 		}, {}))
 	end
-	if layout then
-		local row = style.Display == "Flex" and style.FlexDirection ~= "Column"
+	if layout and (style.Display == "Flex" or style.Display == "InlineFlex") then
+		local row = style.FlexDirection ~= "Column"
 		local justify = style.JustifyContent
 		local horizontal = if row then justify else style.AlignItems
 		local vertical = if row then style.AlignItems else justify
@@ -175,7 +178,7 @@ function Paint.children(style: Types.Style, layout: boolean): { [string]: React.
 				else Enum.VerticalAlignment.Top,
 			HorizontalFlex = if row then flex else Enum.UIFlexAlignment.None,
 			VerticalFlex = if row then Enum.UIFlexAlignment.None else flex,
-			Wraps = style.Display == "Flex" and style.FlexWrap == "Wrap",
+			Wraps = style.FlexWrap == "Wrap",
 		}, {}))
 	end
 	return children

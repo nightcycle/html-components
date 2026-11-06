@@ -32,7 +32,7 @@ return function(): string
 				count += 1
 			end
 		end
-		assert(count == 63, `Expected 62 tags and one provider story, got {count}`)
+		assert(count == 64, `Expected 62 tags, one provider story and one layout story, got {count}`)
 		ReactRoblox.act(function()
 			root:render(React.createElement(App))
 		end)

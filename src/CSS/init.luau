@@ -24,6 +24,10 @@ register("length", {
 	"padding-bottom",
 	"padding-left",
 	"gap",
+	"margin-top",
+	"margin-right",
+	"margin-bottom",
+	"margin-left",
 	"border-top-left-radius",
 	"border-top-right-radius",
 	"border-bottom-right-radius",
@@ -33,7 +37,8 @@ register("pixels", { "min-width", "min-height", "max-width", "max-height", "font
 register("integer", { "order", "z-index" })
 register("color", { "color", "background-color", "border-color" })
 local options: { [string]: { string } } = {
-	display = { "block", "flex", "none" },
+	display = { "block", "inline", "inline-block", "flex", "inline-flex", "none" },
+	["vertical-align"] = { "baseline", "top", "middle", "bottom" },
 	["flex-direction"] = { "row", "column" },
 	["flex-wrap"] = { "nowrap", "wrap" },
 	["justify-content"] = { "flex-start", "center", "flex-end", "space-between", "space-around", "space-evenly" },
@@ -43,23 +48,39 @@ local options: { [string]: { string } } = {
 	["font-style"] = { "normal", "italic" },
 	["text-align"] = { "left", "center", "right" },
 	["text-decoration"] = { "none", "underline", "line-through" },
-	["white-space"] = { "normal", "pre", "nowrap" },
+	["white-space"] = { "normal", "pre", "pre-wrap", "nowrap" },
 	overflow = { "visible", "hidden" },
 }
 for name, allowed in options do
 	properties[name] = { Key = Values.pascal(name), Kind = "option", Allowed = allowed }
 end
-local styleKeys: { [string]: boolean } = { Padding = true, BorderRadius = true, BoxShadow = true }
+local styleKeys: { [string]: boolean } =
+	{ Padding = true, Margin = true, LineHeight = true, BorderRadius = true, BoxShadow = true }
 for _, property in properties do
 	styleKeys[property.Key] = true
 end
 
 local function declaration(name: string, value: string): Types.Style?
-	if name == "padding" or name == "border-radius" then
+	if name == "line-height" then
+		if value == "normal" then
+			return { LineHeight = "Normal" }
+		end
+		local ratio = tonumber(value)
+		if ratio and ratio >= 0 and ratio < math.huge then
+			return { LineHeight = ratio }
+		end
+		local pixels = Values.pixels(value)
+		return if pixels and pixels >= 0 then { LineHeight = `{pixels}px` } else nil
+	end
+	if name == "padding" or name == "border-radius" or name == "margin" then
 		local tokens: { string } = {}
 		for token in value:gmatch("%S+") do
+			if name == "margin" and token == "auto" then
+				table.insert(tokens, "Auto")
+				continue
+			end
 			local length = Values.length(token)
-			if not length or length.Scale < 0 or length.Offset < 0 then
+			if not length or (name ~= "margin" and (length.Scale < 0 or length.Offset < 0)) then
 				return nil
 			end
 			table.insert(tokens, token)
@@ -71,6 +92,8 @@ local function declaration(name: string, value: string): Types.Style?
 			tokens[1], tokens[2] or tokens[1], tokens[3] or tokens[1], tokens[4] or tokens[2] or tokens[1]
 		if name == "padding" then
 			return { PaddingTop = a, PaddingRight = b, PaddingBottom = c, PaddingLeft = d }
+		elseif name == "margin" then
+			return { MarginTop = a, MarginRight = b, MarginBottom = c, MarginLeft = d }
 		end
 		return {
 			BorderTopLeftRadius = a,
@@ -93,10 +116,13 @@ local function declaration(name: string, value: string): Types.Style?
 	if property.Kind == "length" then
 		local length = Values.length(value)
 		if not length then
-			if value ~= "auto" or (name ~= "width" and name ~= "height") then
+			if value ~= "auto" or (name ~= "width" and name ~= "height" and not name:match("^margin%-")) then
 				return nil
 			end
-		elseif length.Scale < 0 or length.Offset < 0 then
+			if name:match("^margin%-") then
+				parsed = "Auto"
+			end
+		elseif not name:match("^margin%-") and (length.Scale < 0 or length.Offset < 0) then
 			return nil
 		end
 	elseif property.Kind == "pixels" or property.Kind == "integer" then
@@ -208,11 +234,18 @@ function CSS.inherited(style: Types.Style): Types.Style
 		FontStyle = style.FontStyle,
 		TextAlign = style.TextAlign,
 		WhiteSpace = style.WhiteSpace,
+		LineHeight = style.LineHeight,
 	}
 end
 
 local function normalize(style: Types.Style): Types.Style
 	local result = table.clone(style)
+	if style.Margin then
+		result.MarginTop = style.MarginTop or style.Margin
+		result.MarginRight = style.MarginRight or style.Margin
+		result.MarginBottom = style.MarginBottom or style.Margin
+		result.MarginLeft = style.MarginLeft or style.Margin
+	end
 	if style.Padding then
 		result.PaddingTop = style.PaddingTop or style.Padding
 		result.PaddingRight = style.PaddingRight or style.Padding

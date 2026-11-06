@@ -19,6 +19,7 @@ return function(): (string) -> any
 		{
 			"src/Tag.luau",
 			"src/Types.luau",
+			"src/Layout/Flow.luau",
 			"src/CSS/init.luau",
 			"src/CSS/Values.luau",
 			"src/CSS/Selector.luau",

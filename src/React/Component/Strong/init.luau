@@ -11,7 +11,7 @@ local render = require(script.Parent.Parent.Render.Text)
 local Types = require(script.Parent.Parent.Parent.Types)
 export type Properties = Types.TextProperties
 -- Constants
-local DEFAULT_STYLE: Types.Style = { FontWeight = "Bold" }
+local DEFAULT_STYLE: Types.Style = { Display = "Inline", FontWeight = "Bold" }
 -- Variables
 -- References
 -- Private Functions
