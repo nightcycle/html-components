@@ -21,11 +21,13 @@ local e = React.createElement
 -- Class
 return function(tag: Types.Tag, props: Properties, defaults: Types.Style): React.ReactNode
 	local state = useStyle(tag, props, defaults)
-	if tag == "Br" and state.Style.Height == nil then
-		state.Style.Height = Paint.lineHeight(state.Style)
+	local style = state.Style
+	if tag == "Br" and style.Height == nil then
+		style = table.clone(style)
+		style.Height = Paint.lineHeight(style)
 	end
 	local _, native = RobloxComponents.Frame({}, props)
 	local _, merged =
-		RobloxComponents.Frame(native, Paint.box(state.Style, props.Id or tag) :: RobloxComponents.FrameProperties)
+		RobloxComponents.Frame(native, Paint.box(style, props.Id or tag) :: RobloxComponents.FrameProperties)
 	return e(RobloxComponents.Frame(Root.props(merged, props, state), {}, Root.children(state, nil, false)))
 end

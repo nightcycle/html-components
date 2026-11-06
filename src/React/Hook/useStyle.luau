@@ -3,16 +3,16 @@
 -- Packages
 local React = require(script.Parent.Parent.Parent.Parent.React)
 -- Modules
-local CSS = require(script.Parent.Parent.Parent.CSS)
+local StyleStore = require(script.Parent.Parent.Context.StyleStore)
 -- Components
 -- Hooks
+local useStyleScope = require(script.Parent.useStyleScope)
 -- Contexts
-local StyleContext = require(script.Parent.Parent.Context.Style)
 -- Types
 local Types = require(script.Parent.Parent.Parent.Types)
 export type State = {
 	Style: Types.Style,
-	Context: Types.StyleContext,
+	Context: StyleStore.Scope,
 	SetHover: (boolean) -> (),
 	SetActive: (boolean) -> (),
 	SetFocus: (boolean) -> (),
@@ -23,7 +23,6 @@ export type State = {
 -- Private Functions
 -- Class
 return function(tag: Types.Tag, props: Types.Common, defaults: Types.Style, disabled: boolean?): State
-	local parent = React.useContext(StyleContext)
 	local hover, setHover = React.useState(false)
 	local active, setActive = React.useState(false)
 	local focus, setFocus = React.useState(false)
@@ -40,12 +39,10 @@ return function(tag: Types.Tag, props: Types.Common, defaults: Types.Style, disa
 		Focus = focus,
 		Disabled = disabled,
 	}
-	local style = CSS.resolve(parent.Sheets, node, parent.Ancestors, parent.Inherited, defaults, props.Css)
-	local ancestors = table.clone(parent.Ancestors)
-	table.insert(ancestors, node)
+	local style, scope = useStyleScope({ Node = node, Defaults = defaults, Inline = props.Css })
 	return {
 		Style = style,
-		Context = { Sheets = parent.Sheets, Ancestors = ancestors, Inherited = CSS.inherited(style) },
+		Context = scope,
 		SetHover = setHover,
 		SetActive = setActive,
 		SetFocus = setFocus,

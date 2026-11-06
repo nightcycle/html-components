@@ -73,6 +73,10 @@ local element = e(HTML.StyleProvider, { StyleSheet = sheet }, children)
 
 The cascade is inherited typography → tag defaults → matching normal rules (specificity, then source order) → inline `Css` → matching `!important` declarations. Native props are the final Roblox escape hatch. Unsupported CSS is omitted with diagnostics; providers also log these diagnostics once when their stylesheet inputs change.
 
+Style contexts hold stable subscription scopes. Stylesheet updates compare each element's resolved style field by field and schedule React updates only for changed results. Changing `.notice` leaves unrelated elements out of React rendering; inherited typography still reaches descendants that have not overridden it. Ancestor state and class changes still affect descendant selectors. A local background or padding change does not propagate to descendants.
+
+Replacing a stylesheet still runs style resolution through its subtree; rules are not yet indexed by class. These subscriptions prevent style-driven renders, not ordinary renders caused by an application's parent rebuilding children or changing props. Keep child elements stable or use `React.memo` where those parent renders matter. Continue replacing style tables instead of mutating them in place.
+
 ## Controls and assets
 
 | Component | Props and behavior |
@@ -127,7 +131,7 @@ Each component exports `Properties` and an explicit component function. Shared r
 
 `scripts/tags.luau` owns the tag catalog and default styles. Run `lune run scripts/generate` after editing it; commit the component folders, header, catalog, stories, and Wally directory list together. Generated source uses the same StyLua settings as `open-shl`; the check command detects drift.
 
-Local checks cover CSS parsing/cascade/selector behavior, generated story coverage, all 63 component property exports through the package header, formatting, strict runtime **and tooling** analysis, and 14 fixtures that must fail type checking. Build checks compile the runtime and demo and verify Wally contents. GitHub CI performs these checks; it does not run Studio.
+Local checks cover CSS parsing/cascade/selector behavior, selective style notifications (including 500 subscribers), generated story coverage, all 63 component property exports through the package header, formatting, strict runtime **and tooling** analysis, and 14 fixtures that must fail type checking. Build checks compile the runtime and demo and verify Wally contents. GitHub CI performs these checks; it does not run Studio.
 
 The editor uses the Luau LSP extension's automatically updated Roblox definitions. The pinned `.tools/globalTypes-*.d.luau` file is used only by the command-line checks; loading it again through `luau-lsp.types.definitionFiles` creates conflicting enum types (`@roblox` versus `@roblox0`). After changing these settings, restart the Luau language server if old diagnostics remain.
 
@@ -137,10 +141,11 @@ For actual ReactRoblox smoke tests, open a fresh demo place and run this in the 
 _G.__DEV__ = true
 _G.__ROACT_17_MOCK_SCHEDULER__ = true
 print(require(game.ReplicatedStorage.Tests.Integration)())
+print(require(game.ReplicatedStorage.Tests.StyleUpdates)())
 print(require(game.ReplicatedStorage.Tests.Stories)())
 ```
 
-The tests use detached targets and clean them up. Reopen the place before normal Play testing so the mocked scheduler does not affect the demo. Development validation mounted all 62 tags, all 63 stories, and the gallery in Studio. The shared browser/Studio visual fixtures also compare nine scenes across all eight renderer families. See [the screenshot comparison workflow and measured limits](docs/visual-validation.md).
+The tests use detached targets and clean them up. Reopen the place before normal Play testing so the mocked scheduler does not affect the demo. Development validation mounted all 62 tags, all 63 stories, and the gallery in Studio. `StyleUpdates` verifies actual render invocations and committed updates, accounting for development Strict Mode's double invocation. The shared browser/Studio visual fixtures also compare nine scenes across all eight renderer families. See [the screenshot comparison workflow and measured limits](docs/visual-validation.md).
 
 ## Releases
 

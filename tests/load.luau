@@ -16,7 +16,14 @@ return function(): (string) -> any
 		return result
 	end
 	for _, path in
-		{ "src/Tag.luau", "src/Types.luau", "src/CSS/init.luau", "src/CSS/Values.luau", "src/CSS/Selector.luau" }
+		{
+			"src/Tag.luau",
+			"src/Types.luau",
+			"src/CSS/init.luau",
+			"src/CSS/Values.luau",
+			"src/CSS/Selector.luau",
+			"src/React/Context/StyleStore.luau",
+		}
 	do
 		local name = path:gsub("/init%.luau$", ""):gsub("%.luau$", "")
 		local source = fs.readFile(path):gsub("require%((script[%w%.]*)%)", function(expression: string): string

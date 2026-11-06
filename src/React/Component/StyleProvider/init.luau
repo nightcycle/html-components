@@ -7,6 +7,7 @@ local CSS = require(script.Parent.Parent.Parent.CSS)
 local getChildren = require(script.Parent.Parent.Parent.Children)
 -- Components
 -- Hooks
+local useStyleScope = require(script.Parent.Parent.Hook.useStyleScope)
 -- Contexts
 local StyleContext = require(script.Parent.Parent.Context.Style)
 -- Types
@@ -19,7 +20,6 @@ export type Properties = Types.ProviderProperties
 local e = React.createElement
 -- Class
 return function(props: Properties): React.ReactNode
-	local parent = React.useContext(StyleContext)
 	local parsed = React.useMemo(function()
 		return if props.CSS then CSS.parse(props.CSS) else nil
 	end, { props.CSS or false })
@@ -32,15 +32,16 @@ return function(props: Properties): React.ReactNode
 			end
 		end
 	end, { parsed or false, props.StyleSheet or false })
-	local value = React.useMemo(function(): Types.StyleContext
-		local sheets = table.clone(parent.Sheets)
+	local sheets = React.useMemo(function(): { Types.StyleSheet }
+		local result: { Types.StyleSheet } = {}
 		if parsed then
-			table.insert(sheets, parsed)
+			table.insert(result, parsed)
 		end
 		if props.StyleSheet then
-			table.insert(sheets, props.StyleSheet)
+			table.insert(result, props.StyleSheet)
 		end
-		return { Sheets = sheets, Ancestors = parent.Ancestors, Inherited = parent.Inherited }
-	end, { parent, parsed or false, props.StyleSheet or false } :: { unknown })
-	return e(StyleContext.Provider, { value = value }, getChildren(props))
+		return result
+	end, { parsed or false, props.StyleSheet or false } :: { unknown })
+	local _, scope = useStyleScope({ Sheets = sheets })
+	return e(StyleContext.Provider, { value = scope }, getChildren(props))
 end
