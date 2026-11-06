@@ -1,0 +1,5 @@
+{
+  "name": "HTMLComponents",
+  "globIgnorePaths": ["**/*.story.luau"],
+  "tree": { "$path": "src" }
+}

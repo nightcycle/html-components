@@ -1,0 +1,7 @@
+[tools]
+wally = "UpliftGames/wally@0.3.2"
+wally-package-types = "JohnnyMorganz/wally-package-types@1.6.2"
+rojo = "rojo-rbx/rojo@7.7.1"
+lune = "lune-org/lune@0.10.5"
+stylua = "JohnnyMorganz/StyLua@2.6.0"
+luau-lsp = "JohnnyMorganz/luau-lsp@1.69.0"

@@ -1,0 +1,19 @@
+{
+  "name": "HTML Components Dev",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "Packages": { "$path": "Packages", "HTMLComponents": { "$path": "src" } },
+      "DevPackages": { "$path": "DevPackages" },
+      "Stories": { "$path": "stories" },
+      "Demo": { "$path": "demo/App.luau" },
+      "Tests": { "$path": "tests/roblox" },
+      "VisualFixtures": { "$path": "tests/visual/Fixtures.luau" }
+    },
+    "StarterPlayer": {
+      "StarterPlayerScripts": { "HTMLDemo": { "$path": "demo/Main.client.luau" } }
+    },
+    "Workspace": { "$properties": { "FilteringEnabled": true } },
+    "Lighting": { "$properties": { "Ambient": [0.5, 0.5, 0.5] } }
+  }
+}

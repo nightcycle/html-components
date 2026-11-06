@@ -1,0 +1,9 @@
+{
+  "luau-lsp.platform.type": "roblox",
+  "luau-lsp.sourcemap.rojoProjectFile": "dev.project.json",
+  "luau-lsp.sourcemap.sourcemapFile": "sourcemap.json",
+  "luau-lsp.sourcemap.autogenerate": true,
+  "luau-lsp.sourcemap.useVSCodeWatcher": true,
+  "luau-lsp.types.definitionFiles": {},
+  "luau-lsp.ignoreGlobs": ["Packages/**", "DevPackages/**", "build/**", ".tools/**", "tests/type-errors/**"]
+}

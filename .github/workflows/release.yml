@@ -1,0 +1,84 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*', '[0-9]*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing stable version matching wally.toml
+        required: true
+        type: string
+      publish_wally:
+        description: Publish to Wally (disable only to retry GitHub assets after Wally succeeded)
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    env:
+      RELEASE_INPUT: ${{ inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Resolve either version tag spelling
+        shell: bash
+        run: |
+          version="${RELEASE_INPUT#v}"
+          if [[ ! "$version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "::error::Use a stable X.Y.Z or vX.Y.Z version."
+            exit 1
+          fi
+          for tag in "$RELEASE_INPUT" "v$version" "$version"; do
+            if commit=$(git rev-parse --verify --quiet "refs/tags/$tag^{commit}"); then
+              git checkout --detach "$commit"
+              echo "RELEASE_VERSION=$version" >> "$GITHUB_ENV"
+              echo "RELEASE_TAG=$tag" >> "$GITHUB_ENV"
+              exit 0
+            fi
+          done
+          echo "::error::No release tag exists for $version (checked both spellings)."
+          exit 1
+      - uses: CompeyDev/setup-rokit@1d9390883f7ebce19d48f5b8d006e11d387c92ab # v0.2.1
+        with:
+          version: v1.2.0
+      - name: Validate version and exact tag commit
+        run: lune run scripts/release/validate.lune.luau
+      - name: Install dependencies and pinned definitions
+        run: lune run scripts/setup
+      - name: Generated components, regression tests, formatting and strict types
+        run: lune run scripts/check
+      - name: Verify dependency lockfile
+        run: git diff --exit-code -- wally.lock
+      - name: Build and verify release artifacts
+        run: lune run scripts/build
+      - name: Publish Wally package
+        if: github.event_name != 'workflow_dispatch' || inputs.publish_wally
+        env:
+          WALLY_AUTH_TOKEN: ${{ secrets.WALLY_AUTH_TOKEN }}
+        run: lune run scripts/release/publish-wally.lune.luau
+      - name: Publish GitHub release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for tag in "$RELEASE_TAG" "v$RELEASE_VERSION" "$RELEASE_VERSION"; do
+            if gh release view "$tag" >/dev/null 2>&1; then
+              gh release upload "$tag" build/* --clobber
+              exit 0
+            fi
+          done
+          gh release create "$RELEASE_TAG" --verify-tag --generate-notes --title "$RELEASE_TAG" build/*
