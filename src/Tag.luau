@@ -19,12 +19,12 @@ export type Name =
 	| "Dl"
 	| "Dt"
 	| "Dd"
-	| "Fieldset"
+	| "FieldSet"
 	| "P"
 	| "Span"
 	| "Label"
 	| "Legend"
-	| "Figcaption"
+	| "FigCaption"
 	| "Abbr"
 	| "Time"
 	| "Output"
@@ -51,12 +51,12 @@ export type Name =
 	| "Pre"
 	| "Small"
 	| "Mark"
-	| "Blockquote"
+	| "BlockQuote"
 	| "Q"
 	| "A"
 	| "Button"
 	| "Input"
-	| "Textarea"
+	| "TextArea"
 	| "Img"
 	| "Video"
 	| "Progress"
@@ -82,12 +82,12 @@ local names: { [string]: Name } = {
 	["dl"] = "Dl",
 	["dt"] = "Dt",
 	["dd"] = "Dd",
-	["fieldset"] = "Fieldset",
+	["fieldset"] = "FieldSet",
 	["p"] = "P",
 	["span"] = "Span",
 	["label"] = "Label",
 	["legend"] = "Legend",
-	["figcaption"] = "Figcaption",
+	["figcaption"] = "FigCaption",
 	["abbr"] = "Abbr",
 	["time"] = "Time",
 	["output"] = "Output",
@@ -114,12 +114,12 @@ local names: { [string]: Name } = {
 	["pre"] = "Pre",
 	["small"] = "Small",
 	["mark"] = "Mark",
-	["blockquote"] = "Blockquote",
+	["blockquote"] = "BlockQuote",
 	["q"] = "Q",
 	["a"] = "A",
 	["button"] = "Button",
 	["input"] = "Input",
-	["textarea"] = "Textarea",
+	["textarea"] = "TextArea",
 	["img"] = "Img",
 	["video"] = "Video",
 	["progress"] = "Progress",

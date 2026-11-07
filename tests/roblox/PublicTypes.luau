@@ -37,8 +37,8 @@ return function()
 	HTML.Dt(DtProperties)
 	local DdProperties: HTML.DdProperties = {}
 	HTML.Dd(DdProperties)
-	local FieldsetProperties: HTML.FieldsetProperties = {}
-	HTML.Fieldset(FieldsetProperties)
+	local FieldSetProperties: HTML.FieldSetProperties = {}
+	HTML.FieldSet(FieldSetProperties)
 	local PProperties: HTML.PProperties = {}
 	HTML.P(PProperties)
 	local SpanProperties: HTML.SpanProperties = {}
@@ -47,8 +47,8 @@ return function()
 	HTML.Label(LabelProperties)
 	local LegendProperties: HTML.LegendProperties = {}
 	HTML.Legend(LegendProperties)
-	local FigcaptionProperties: HTML.FigcaptionProperties = {}
-	HTML.Figcaption(FigcaptionProperties)
+	local FigCaptionProperties: HTML.FigCaptionProperties = {}
+	HTML.FigCaption(FigCaptionProperties)
 	local AbbrProperties: HTML.AbbrProperties = {}
 	HTML.Abbr(AbbrProperties)
 	local TimeProperties: HTML.TimeProperties = {}
@@ -101,8 +101,8 @@ return function()
 	HTML.Small(SmallProperties)
 	local MarkProperties: HTML.MarkProperties = {}
 	HTML.Mark(MarkProperties)
-	local BlockquoteProperties: HTML.BlockquoteProperties = {}
-	HTML.Blockquote(BlockquoteProperties)
+	local BlockQuoteProperties: HTML.BlockQuoteProperties = {}
+	HTML.BlockQuote(BlockQuoteProperties)
 	local QProperties: HTML.QProperties = {}
 	HTML.Q(QProperties)
 	local AProperties: HTML.AProperties = {}
@@ -111,8 +111,8 @@ return function()
 	HTML.Button(ButtonProperties)
 	local InputProperties: HTML.InputProperties = {}
 	HTML.Input(InputProperties)
-	local TextareaProperties: HTML.TextareaProperties = {}
-	HTML.Textarea(TextareaProperties)
+	local TextAreaProperties: HTML.TextAreaProperties = {}
+	HTML.TextArea(TextAreaProperties)
 	local ImgProperties: HTML.ImgProperties = {}
 	HTML.Img(ImgProperties)
 	local VideoProperties: HTML.VideoProperties = {}

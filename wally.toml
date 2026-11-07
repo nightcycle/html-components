@@ -16,7 +16,7 @@ include = [
   "src/React/Hook", "src/React/Hook/**", "src/React/Render", "src/React/Render/**",
   "src/React/Component", "src/React/Component/*/init.luau",
   # Component folders (maintained by scripts/generate.luau).
-  "src/React/Component/{A,Abbr,Address,Article,Aside,B,Blockquote,Body,Br,Button,Cite,Code,Content,Dd,Del,Div,Dl,Dt,Em,Fieldset,Figcaption,Figure,Footer,Form,H1,H2,H3,H4,H5,H6,Header,Hr,Html,I,Img,Input,Ins,Kbd,Label,Legend,Li,Main,Mark,Meter,Nav,Ol,Output,P,Pre,Progress,Q,S,Samp,Section,Small,Span,Strong,StyleProvider,Textarea,Time,U,Ul,Var,Video}",
+  "src/React/Component/{A,Abbr,Address,Article,Aside,B,BlockQuote,Body,Br,Button,Cite,Code,Content,Dd,Del,Div,Dl,Dt,Em,FieldSet,FigCaption,Figure,Footer,Form,H1,H2,H3,H4,H5,H6,Header,Hr,Html,I,Img,Input,Ins,Kbd,Label,Legend,Li,Main,Mark,Meter,Nav,Ol,Output,P,Pre,Progress,Q,S,Samp,Section,Small,Span,Strong,StyleProvider,TextArea,Time,U,Ul,Var,Video}",
   "docs", "docs/**", "default.project.json", "wally.toml", "README.md", "LICENSE",
 ]
 exclude = ["**"]

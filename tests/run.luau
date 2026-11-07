@@ -302,4 +302,12 @@ check(
 	"Invalid grid and flex fields are rejected"
 )
 check(#CSS.declarations("width:var(--size)").Diagnostics == 1, "Context-dependent inline CSS cannot disappear silently")
+for raw, canonical in
+	{ blockquote = "BlockQuote", textarea = "TextArea", figcaption = "FigCaption", fieldset = "FieldSet" }
+do
+	local current = { Tag = canonical, Classes = {} }
+	check(CSS.matches(assert(CSS.parseSelector(raw)), current, {}), `Raw HTML selector matches {canonical}`)
+	local sheet = CSS.fromMap({ [canonical] = { Color = "purple" } })
+	check(CSS.resolve({ sheet }, current, {}, {}, {}).Color == "purple", `PascalCase selector map matches {canonical}`)
+end
 print(`{count} CSS and component coverage checks passed.`)

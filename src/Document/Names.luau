@@ -1,6 +1,7 @@
 --!strict
 -- Packages
 -- Modules
+local tagName = require(script.Parent.Parent.Tag)
 -- Types
 -- Constants
 local SVG_TAGS = {
@@ -114,7 +115,7 @@ for _, name in SVG_ATTRIBUTES do
 end
 -- Private Functions
 local function pascal(value: string): string
-	return (value:gsub("^[a-z]", string.upper):gsub("[-_:]([a-z])", string.upper))
+	return tagName(value) or (value:gsub("^[a-z]", string.upper):gsub("[-_:]([a-z])", string.upper))
 end
 -- Class
 return {

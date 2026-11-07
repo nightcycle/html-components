@@ -17,5 +17,5 @@ local DEFAULT_STYLE: Types.Style = {}
 -- Private Functions
 -- Class
 return function(props: Properties): React.ReactNode
-	return render("Figcaption", props, DEFAULT_STYLE)
+	return render("FigCaption", props, DEFAULT_STYLE)
 end

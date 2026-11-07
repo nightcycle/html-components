@@ -12,7 +12,7 @@ local _tag: HTML.Tag = "div" -- EXPECT_ERROR
 local _display: HTML.Display = "flex" -- EXPECT_ERROR
 local _align: HTML.AlignItems = "Start" -- EXPECT_ERROR
 local _properties: HTML.DivProperties = { CSS = { FontWeight = "heavy" } } -- EXPECT_ERROR
-local _input: HTML.TextareaProperties = { Value = 123 } -- EXPECT_ERROR
+local _input: HTML.TextAreaProperties = { Value = 123 } -- EXPECT_ERROR
 local _weight: HTML.FontWeight = "bold" -- EXPECT_ERROR
 local _stringCSS: HTML.StyleProviderProperties = { CSS = "Button { color: red; }" } -- EXPECT_ERROR
 local _style: HTML.Style = {}

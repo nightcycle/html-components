@@ -108,6 +108,13 @@ check(
 local custom = Document.parse('<my-widget data-item="A" data_item="B"></my-widget>')
 local element = custom.Children[1].Children[2].Children[1]
 check(element.Tag == "MyWidget" and element.Attributes[1].Name == "DataItem", "PascalCase public names")
+for raw, canonical in
+	{ blockquote = "BlockQuote", textarea = "TextArea", figcaption = "FigCaption", fieldset = "FieldSet" }
+do
+	local result = Document.parse(`<body><{raw}>Content</{raw}></body>`)
+	local child = result.Children[1].Children[2].Children[1]
+	check(result.Success and child.Tag == canonical and child.SourceName == raw, `Canonical component name for <{raw}>`)
+end
 check(
 	Document.attribute(element, "DATA-ITEM") == "A" and Document.attribute(element, "data_item") == "B",
 	"Raw attribute names preserve collisions"

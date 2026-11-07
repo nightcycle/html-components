@@ -3,19 +3,18 @@
 -- Packages
 local React = require(script.Parent.Parent.Parent.Parent.React)
 -- Modules
-local render = require(script.Parent.Parent.Render.Text)
+local render = require(script.Parent.Parent.Render.Input)
 -- Components
 -- Hooks
 -- Contexts
 -- Types
 local Types = require(script.Parent.Parent.Parent.Types)
-export type Properties = Types.TextProperties
+export type Properties = Types.InputProperties
 -- Constants
-local DEFAULT_STYLE: Types.Style = { FontStyle = "Italic", Padding = 12, BackgroundColor = "#eef1f8" }
 -- Variables
 -- References
 -- Private Functions
 -- Class
 return function(props: Properties): React.ReactNode
-	return render("Blockquote", props, DEFAULT_STYLE)
+	return render("TextArea", props, true)
 end

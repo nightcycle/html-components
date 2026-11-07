@@ -56,9 +56,9 @@ for _, tag in
 do
 	add(tag, tag:sub(1, 1):upper() .. tag:sub(2), "container", "{}")
 end
-add("fieldset", "Fieldset", "container", '{ BorderWidth = 1, BorderColor = "#b4bed1", Padding = 12 }')
+add("fieldset", "FieldSet", "container", '{ BorderWidth = 1, BorderColor = "#b4bed1", Padding = 12 }')
 for _, tag in { "p", "span", "label", "legend", "figcaption", "abbr", "time", "output" } do
-	add(tag, tag:sub(1, 1):upper() .. tag:sub(2), "text", "{}")
+	add(tag, if tag == "figcaption" then "FigCaption" else tag:sub(1, 1):upper() .. tag:sub(2), "text", "{}")
 end
 for index, size in { 32, 28, 24, 20, 18, 16 } do
 	add(`h{index}`, `H{index}`, "text", `\{ FontSize = {size}, FontWeight = "Bold" \}`)
@@ -81,7 +81,7 @@ end
 add("pre", "Pre", "text", '{ FontFamily = "Monospace", WhiteSpace = "Pre" }')
 add("small", "Small", "text", "{ FontSize = 12 }")
 add("mark", "Mark", "text", '{ BackgroundColor = "#fff1a6" }')
-add("blockquote", "Blockquote", "text", '{ FontStyle = "Italic", Padding = 12, BackgroundColor = "#eef1f8" }')
+add("blockquote", "BlockQuote", "text", '{ FontStyle = "Italic", Padding = 12, BackgroundColor = "#eef1f8" }')
 add("q", "Q", "text", '{ FontStyle = "Italic" }')
 add("a", "A", "button", '{ Color = "#285cdd", TextDecoration = "Underline", Height = 28 }')
 add(
@@ -91,7 +91,7 @@ add(
 	'{ Height = 38, BackgroundColor = "#315fe8", Color = "white", Padding = 8, BorderRadius = 6, TextAlign = "Center" }'
 )
 add("input", "Input", "input")
-add("textarea", "Textarea", "input")
+add("textarea", "TextArea", "input")
 add("img", "Img", "image")
 add("video", "Video", "video")
 add("progress", "Progress", "meter")

@@ -3,19 +3,19 @@
 -- Packages
 local React = require(script.Parent.Parent.Parent.Parent.React)
 -- Modules
-local render = require(script.Parent.Parent.Render.Container)
+local render = require(script.Parent.Parent.Render.Text)
 -- Components
 -- Hooks
 -- Contexts
 -- Types
 local Types = require(script.Parent.Parent.Parent.Types)
-export type Properties = Types.ContainerProperties
+export type Properties = Types.TextProperties
 -- Constants
-local DEFAULT_STYLE: Types.Style = { BorderWidth = 1, BorderColor = "#b4bed1", Padding = 12 }
+local DEFAULT_STYLE: Types.Style = { FontStyle = "Italic", Padding = 12, BackgroundColor = "#eef1f8" }
 -- Variables
 -- References
 -- Private Functions
 -- Class
 return function(props: Properties): React.ReactNode
-	return render("Fieldset", props, DEFAULT_STYLE)
+	return render("BlockQuote", props, DEFAULT_STYLE)
 end

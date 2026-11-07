@@ -13,4 +13,4 @@ local createStory = require(ReplicatedStorage.Stories.CreateStory)
 -- References
 -- Private Functions
 -- Class
-return createStory("Textarea")
+return createStory("TextArea")

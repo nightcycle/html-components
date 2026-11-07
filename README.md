@@ -53,9 +53,9 @@ end
 
 ## Component conventions
 
-Following `open-shl`, components expose a `Properties` type, return a React element, and construct their host with the typed instance builders. Every component's properties are exported from the public Wally header as `ComponentNameProperties`: for example, `HTML.DivProperties`, `HTML.H2Properties`, `HTML.TextareaProperties`, and `HTML.StyleProviderProperties`. The shared host-family properties remain available too. Consumers never need to index a Wally submodule for types.
+Following `open-shl`, components expose a `Properties` type, return a React element, and construct their host with the typed instance builders. Every component's properties are exported from the public Wally header as `ComponentNameProperties`: for example, `HTML.DivProperties`, `HTML.H2Properties`, `HTML.TextAreaProperties`, and `HTML.StyleProviderProperties`. The shared host-family properties remain available too. Consumers never need to index a Wally submodule for types.
 
-- Components and tag identifiers use PascalCase (`HTML.Div`, `HTML.Tags.Div`, `HTML.Tags.H1`, `HTML.Textarea`). `HTML.Tag` is the exported tag union. `HTML.Catalog` lists PascalCase tags, component names, and renderer kinds. Raw CSS selectors retain normal HTML syntax (`div`, `h1`) and normalize during parsing.
+- Components and tag identifiers use PascalCase (`HTML.Div`, `HTML.Tags.Div`, `HTML.Tags.H1`, `HTML.TextArea`). `HTML.Tag` is the exported tag union. `HTML.Catalog` lists PascalCase tags, component names, and renderer kinds. Raw CSS selectors retain normal HTML syntax (`div`, `h1`) and normalize during parsing.
 - HTML-facing props are `Id`, `ClassName`, `CSS`, `Hidden`, `Text`, `Src`, `Href`, `Value`, and the control-specific props below. The fragment parser normalizes supported lowercase HTML attributes into this API.
 - `CSS` is a typed inline `HTML.Style` record. It is named separately from Roblox's native `Frame.Style`/`TextButton.Style` enum property.
 - Style fields and option values use PascalCase: `{ FontSize = 16, Display = "Flex", JustifyContent = "SpaceBetween" }`. Every string union has its own public type, including `HTML.Display`, `HTML.FontFamily`, `HTML.TextAlign`, `HTML.SelectorRelation`, and `HTML.RenderKind`. CSS text still uses `font-size: 16px; display: flex; justify-content: space-between`.
@@ -141,7 +141,7 @@ Replacing a stylesheet still runs style resolution through its subtree; rules ar
 | Component | Props and behavior |
 | --- | --- |
 | `Button`, `A` | `OnActivated: () -> ()`, `Disabled`; links call `OnNavigate(Href)` when supplied. Navigation is application-owned. |
-| `Input`, `Textarea` | Text inputs. `Value` is controlled; `DefaultValue` initializes uncontrolled state. `OnInput(string)`, `OnCommit(string, enterPressed)`, `Placeholder`, `ReadOnly`, `Disabled`. `Text` is an initial-value alias; use `Value` for updates. |
+| `Input`, `TextArea` | Text inputs. `Value` is controlled; `DefaultValue` initializes uncontrolled state. `OnInput(string)`, `OnCommit(string, enterPressed)`, `Placeholder`, `ReadOnly`, `Disabled`. `Text` is an initial-value alias; use `Value` for updates. |
 | `Img` | `Src` maps to `ImageLabel.Image`; native `ScaleType` remains available. `Alt` is metadata only. |
 | `Video` | `Src`, `AutoPlay`, `Loop`, `Muted`, plus native VideoFrame properties. Requires a permitted Roblox video asset. |
 | `Progress`, `Meter` | `Value`, `Min` (default 0), `Max` (default 1), `FillColor`. Clamps the visual fill; invalid ranges render empty. |

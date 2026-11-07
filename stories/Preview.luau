@@ -43,8 +43,8 @@ local tagSizes: { [string]: Vector2 } = {
 	H3 = Vector2.new(340, 88),
 	P = Vector2.new(360, 96),
 	Pre = Vector2.new(420, 112),
-	Blockquote = Vector2.new(400, 112),
-	Textarea = Vector2.new(420, 128),
+	BlockQuote = Vector2.new(400, 112),
+	TextArea = Vector2.new(420, 128),
 	Hr = Vector2.new(360, 1),
 	Br = Vector2.new(160, 16),
 }

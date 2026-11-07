@@ -59,7 +59,7 @@ for _, spec in specs do
 	local constants = if hasDefaults then `local DEFAULT_STYLE: Types.Style = {spec.Defaults or "{}"}\n` else ""
 	local extra = if hasDefaults
 		then ", DEFAULT_STYLE"
-		elseif kind == "Input" then ", " .. tostring(tag == "Textarea")
+		elseif kind == "Input" then ", " .. tostring(tag == "TextArea")
 		else ""
 	local directory = `src/React/Component/{name}`
 	if not check then

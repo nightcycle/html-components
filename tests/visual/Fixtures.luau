@@ -53,13 +53,13 @@ local cases: { Case } = {
 		Node = { Tag = "Button", Id = "button", Text = "Centered action" },
 	},
 	{
-		Title = "Input / Textarea / padding",
+		Title = "Input / TextArea / padding",
 		Node = {
 			Tag = "Div",
 			Id = "form",
 			Children = {
 				{ Tag = "Input", Id = "input", Text = "Single line" },
-				{ Tag = "Textarea", Id = "textarea", Text = "Multiple lines\nSecond line" },
+				{ Tag = "TextArea", Id = "textarea", Text = "Multiple lines\nSecond line" },
 			} :: { Node },
 		},
 	},
