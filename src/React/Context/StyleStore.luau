@@ -15,6 +15,7 @@ export type Input = {
 	Inline: Types.Style?,
 	Sheets: { Types.StyleSheet }?,
 	Text: boolean?,
+	ViewportWidth: number?,
 }
 export type Snapshot = { Style: Types.Style, Context: Types.StyleContext }
 export type Listener = () -> ()
@@ -77,6 +78,8 @@ local function equalNode(left: Types.Node, right: Types.Node): boolean
 		and left.Active == right.Active
 		and left.Focus == right.Focus
 		and left.Disabled == right.Disabled
+		and left.Hidden == right.Hidden
+		and left.PreviousSiblings == right.PreviousSiblings
 		and equalArray(left.Classes, right.Classes)
 end
 
@@ -96,13 +99,33 @@ local function resolve(parent: Snapshot, input: Input, previous: Snapshot?): Sna
 	local context = parent.Context
 	local sheets, ancestors, inherited = context.Sheets, context.Ancestors, context.Inherited
 	local decoration: Types.TextDecoration? = context.Decoration
+	local variables: Types.CSSVariables = context.Variables or {}
+	local viewport = input.ViewportWidth or context.ViewportWidth or 1280
+	local display: Types.Display? = context.Display
 	local style = EMPTY_STYLE
 	if input.Node then
-		style = CSS.resolve(sheets, input.Node, ancestors, inherited, input.Defaults or EMPTY_STYLE, input.Inline)
+		style, variables = CSS.resolve(
+			sheets,
+			input.Node,
+			ancestors,
+			inherited,
+			input.Defaults or EMPTY_STYLE,
+			input.Inline,
+			{ ViewportWidth = viewport },
+			variables
+		)
 		style.TextDecoration = Decoration.combine(
 			if style.Display == "InlineBlock" or style.Display == "InlineFlex" then nil else decoration,
 			style.TextDecoration
 		)
+		if display == "Flex" or display == "InlineFlex" or display == "Grid" then
+			if style.Display == "Inline" or style.Display == "InlineBlock" then
+				style.Display = "Block"
+			elseif style.Display == "InlineFlex" then
+				style.Display = "Flex"
+			end
+		end
+		display = style.Display
 		decoration = style.TextDecoration
 		table.freeze(style)
 		ancestors = table.clone(ancestors)
@@ -120,6 +143,22 @@ local function resolve(parent: Snapshot, input: Input, previous: Snapshot?): Sna
 	end
 	if previous then
 		local old = previous.Context
+		local sameVariables = true
+		for key, value in variables do
+			if not old.Variables or old.Variables[key] ~= value then
+				sameVariables = false
+				break
+			end
+		end
+		for key, value in pairs(old.Variables or {}) do
+			if variables[key] ~= value then
+				sameVariables = false
+				break
+			end
+		end
+		if sameVariables then
+			variables = old.Variables or variables
+		end
 		style = if StyleStore.equal(style, previous.Style) then previous.Style else style
 		sheets = if equalArray(sheets, old.Sheets) then old.Sheets else sheets
 		ancestors = if equalAncestors(ancestors, old.Ancestors) then old.Ancestors else ancestors
@@ -129,13 +168,24 @@ local function resolve(parent: Snapshot, input: Input, previous: Snapshot?): Sna
 			and ancestors == old.Ancestors
 			and inherited == old.Inherited
 			and decoration == old.Decoration
+			and sameVariables
+			and viewport == old.ViewportWidth
+			and display == old.Display
 		then
 			return if style == previous.Style then previous else { Style = style, Context = old }
 		end
 	end
 	return {
 		Style = style,
-		Context = { Sheets = sheets, Ancestors = ancestors, Inherited = inherited, Decoration = decoration },
+		Context = {
+			Sheets = sheets,
+			Ancestors = ancestors,
+			Inherited = inherited,
+			Decoration = decoration,
+			Variables = variables,
+			ViewportWidth = viewport,
+			Display = display,
+		},
 	}
 end
 

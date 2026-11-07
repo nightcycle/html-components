@@ -3,21 +3,32 @@ local React = require(script.Parent.Parent.React)
 local Roblox = require(script.Parent.Parent.RobloxComponents)
 local Tag = require(script.Parent.Tag)
 
-export type Display = "Block" | "Inline" | "InlineBlock" | "Flex" | "InlineFlex" | "None"
+export type Display = "Block" | "Inline" | "InlineBlock" | "Flex" | "InlineFlex" | "Grid" | "None"
 export type VerticalAlign = "Baseline" | "Top" | "Middle" | "Bottom"
 export type FlexDirection = "Row" | "Column"
 export type FlexWrap = "Nowrap" | "Wrap"
 export type JustifyContent = "FlexStart" | "Center" | "FlexEnd" | "SpaceBetween" | "SpaceAround" | "SpaceEvenly"
-export type AlignItems = "FlexStart" | "Center" | "FlexEnd"
-export type FontFamily = "SansSerif" | "Serif" | "Monospace"
-export type FontWeight = "Normal" | "Bold"
+export type AlignItems = "FlexStart" | "Center" | "FlexEnd" | "Stretch" | "Baseline"
+export type AlignSelf = "Auto" | "FlexStart" | "Center" | "FlexEnd" | "Stretch" | "Baseline"
+export type Position = "Static" | "Relative" | "Absolute" | "Fixed"
+export type FontFamily = "SansSerif" | "Serif" | "Monospace" | "System"
+export type FontWeight =
+	"Thin"
+	| "ExtraLight"
+	| "Light"
+	| "Normal"
+	| "Medium"
+	| "SemiBold"
+	| "Bold"
+	| "ExtraBold"
+	| "Heavy"
 export type FontStyle = "Normal" | "Italic"
 export type TextAlign = "Left" | "Center" | "Right"
 export type TextDecoration = "None" | "Underline" | "LineThrough" | "UnderlineLineThrough"
 export type WhiteSpace = "Normal" | "Pre" | "PreWrap" | "Nowrap"
 export type Overflow = "Visible" | "Hidden"
-export type SelectorRelation = "Descendant" | "Child"
-export type SelectorState = "Hover" | "Active" | "Focus" | "Disabled"
+export type SelectorRelation = "Descendant" | "Child" | "AdjacentSibling" | "SubsequentSibling"
+export type SelectorState = "Hover" | "Active" | "Focus" | "Disabled" | "NotHidden"
 export type RenderKind = "Container" | "Text" | "Button" | "Input" | "Image" | "Video" | "Meter" | "Spacer"
 export type Tag = Tag.Name
 export type CatalogEntry = { Tag: Tag, Name: Tag, Kind: RenderKind }
@@ -49,6 +60,19 @@ export type Style = {
 	FlexWrap: FlexWrap?,
 	JustifyContent: JustifyContent?,
 	AlignItems: AlignItems?,
+	AlignSelf: AlignSelf?,
+	PlaceSelf: AlignSelf?,
+	GridTemplateColumns: number?,
+	GridColumn: number?,
+	ColumnGap: Length?,
+	RowGap: Length?,
+	FlexGrow: number?,
+	FlexShrink: number?,
+	Position: Position?,
+	Top: Length?,
+	Right: Length?,
+	Bottom: Length?,
+	Left: Length?,
 	BackgroundColor: string?,
 	Color: string?,
 	FontSize: number?,
@@ -79,6 +103,8 @@ export type Node = {
 	Active: boolean?,
 	Focus: boolean?,
 	Disabled: boolean?,
+	Hidden: boolean?,
+	PreviousSiblings: { Node }?,
 }
 export type SelectorPart = {
 	Tag: Tag?,
@@ -89,11 +115,28 @@ export type SelectorPart = {
 }
 export type Specificity = { Ids: number, Classes: number, Tags: number }
 export type Selector = { Parts: { SelectorPart }, Specificity: Specificity }
-export type Rule = { Selector: Selector, Style: Style, Important: Style }
+export type CSSDeclaration = { Name: string, Value: string, Important: boolean }
+export type CSSVariables = { [string]: string }
+export type CSSOptions = { ViewportWidth: number?, RootFontSize: number? }
+export type Rule = {
+	Selector: Selector,
+	Style: Style,
+	Important: Style,
+	Declarations: { CSSDeclaration }?,
+	MinWidth: number?,
+	MaxWidth: number?,
+}
 export type StyleMap = { [string]: Style }
 export type StyleSheet = { Rules: { Rule }, Diagnostics: { Diagnostic } }
-export type StyleContext =
-	{ Sheets: { StyleSheet }, Ancestors: { Node }, Inherited: Style, Decoration: TextDecoration? }
+export type StyleContext = {
+	Sheets: { StyleSheet },
+	Ancestors: { Node },
+	Inherited: Style,
+	Decoration: TextDecoration?,
+	Variables: CSSVariables?,
+	ViewportWidth: number?,
+	Display: Display?,
+}
 
 export type ContentTag =
 	"Div"
@@ -177,6 +220,9 @@ export type Common = {
 	ClassName: string?,
 	CSS: Style?,
 	Hidden: boolean?,
+	IntrinsicSize: Vector2?,
+	SourceOrder: number?,
+	PreviousSiblings: { Node }?,
 	Children: React.ReactNode?,
 	-- Explicit metadata because the typed instance builder filters string ref/children keys.
 	Ref: React.Ref<GuiObject>?,
@@ -212,6 +258,7 @@ export type ProviderProperties = {
 	CSS: StyleMap?,
 	Children: React.ReactNode?,
 	OnDiagnostics: (({ Diagnostic }) -> ())?,
+	ViewportWidth: number?,
 }
 
 return {}

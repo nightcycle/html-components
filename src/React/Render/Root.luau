@@ -33,6 +33,9 @@ end
 function Root.props<P>(native: P, props: Types.Common, state: useStyle.State, layout: boolean?): P
 	local record = (native :: unknown) :: { [unknown]: unknown }
 	local explicit = (props :: unknown) :: { [string]: unknown }
+	if props.SourceOrder then
+		record.LayoutOrder = (state.Style.Order or 0) * 100000 + props.SourceOrder
+	end
 	local size, automatic = explicit.Size, explicit.AutomaticSize
 	local textTransparency, strokeTransparency = record.TextTransparency, record.TextStrokeTransparency
 	local backgroundColor, backgroundTransparency = record.BackgroundColor3, record.BackgroundTransparency
@@ -46,6 +49,7 @@ function Root.props<P>(native: P, props: Types.Common, state: useStyle.State, la
 		TextStrokeTransparency = if type(strokeTransparency) == "number" then strokeTransparency else nil,
 		BackgroundColor = if typeof(backgroundColor) == "Color3" then backgroundColor else nil,
 		BackgroundTransparency = if type(backgroundTransparency) == "number" then backgroundTransparency else nil,
+		IntrinsicSize = props.IntrinsicSize,
 	}, props.Ref)
 	if props.Id and record.Name == nil then
 		record.Name = props.Id

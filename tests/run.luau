@@ -46,7 +46,7 @@ check(CSS.resolve(nested, node, {}, {}, {}, nil).Color == "blue", "Nested provid
 local inherit = CSS.inherited({ Color = "red", Padding = 10, BackgroundColor = "blue", TextDecoration = "Underline" })
 check(inherit.Color == "red" and inherit.Padding == nil and inherit.BackgroundColor == nil, "Only typography inherits")
 local invalid = CSS.parse(
-	"p { position:fixed; width:12em; color:nope; border-width:-2px } @media (x) { p { color:red } } p + span {color:red}"
+	"p { position:sticky; width:12vh; color:nope; border-width:-2px } @media (x) { p { color:red } } p:has(span) {color:red}"
 )
 check(
 	#invalid.Diagnostics == 6 and #invalid.Rules == 1,
@@ -138,6 +138,11 @@ check(
 check(Values.length("50%") == roblox.UDim.new(0.5, 0) and Values.length("2em") == nil, "Length conversion")
 check(Values.shadow("0px 2px -1px black") == nil, "Negative blur rejected")
 check(Values.shadow("inset 0px 2px 4px 1px #0008").Inset == true, "Inset shadow")
+check(
+	#Values.shadows("0 0 #0000, 0 1px 3px rgb(0 0 0 / .1), 0 1px 2px rgb(0 0 0 / .06)") == 3,
+	"Layered shadows retain zero-blur placeholders and functional colors"
+)
+check(Values.shadows("0 1px 3px black, invalid") == nil, "A malformed shadow layer rejects the list")
 local options = resolve(
 	"p { display:flex; flex-direction:row; justify-content:space-between; font-family:sans-serif; text-decoration:line-through }"
 )
@@ -211,4 +216,90 @@ for _, spec in require("../scripts/tags") do
 		`Component/story pair: {spec.Tag}`
 	)
 end
+local imported = CSS.parse([[.Theme { --Accent: 12 34 56; --Alpha: .5; font-size:20px }
+.Child { color:rgb(var(--Accent) / var(--Alpha)); width:2em; padding:1rem; font-weight:800 }
+@media (min-width:1024px) { .Child { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:2rem } }
+.Stack > :not([hidden]) ~ :not([hidden]) { margin-left:calc(2rem * calc(1 - var(--reverse, 0))) }
+]])
+check(#imported.Diagnostics == 0, "Imported variables, media, grid and sibling spacing compile")
+local parentStyle, variables = CSS.resolve({ imported }, { Tag = "Div", Classes = { "Theme" } }, {}, {}, {})
+local child = CSS.resolve(
+	{ imported },
+	{ Tag = "Div", Classes = { "Child" } },
+	{},
+	CSS.inherited(parentStyle),
+	{},
+	nil,
+	{ ViewportWidth = 1440 },
+	variables
+)
+check(
+	child.Width == "40px" and child.PaddingLeft == "16px" and child.FontWeight == "ExtraBold",
+	"Relative dimensions and numeric font weights"
+)
+local childColor, alpha = Values.color(child.Color)
+check(
+	childColor == roblox.Color3.fromRGB(12, 34, 56) and alpha == 0.5,
+	"Inherited custom properties resolve inside RGB"
+)
+check(
+	child.Display == "Grid" and child.GridTemplateColumns == 3 and child.Gap == "32px",
+	"Responsive grid styles apply"
+)
+local mobile = CSS.resolve(
+	{ imported },
+	{ Tag = "Div", Classes = { "Child" } },
+	{},
+	{},
+	{},
+	nil,
+	{ ViewportWidth = 390 },
+	variables
+)
+check(mobile.Display == nil and mobile.GridTemplateColumns == nil, "Media rule does not leak below its breakpoint")
+local sibling = { Tag = "Div", Classes = {} }
+local last = { Tag = "Div", Classes = {}, PreviousSiblings = { sibling } }
+local spaced = CSS.resolve({ imported }, last, { { Tag = "Div", Classes = { "Stack" } } }, {}, {})
+check(spaced.MarginLeft == "32px", "Sibling selector and nested calc produce spacing")
+check(
+	CSS.resolve({ imported }, sibling, { { Tag = "Div", Classes = { "Stack" } } }, {}, {}).MarginLeft == nil,
+	"First sibling is not spaced"
+)
+check(
+	CSS.parseSelector("p +") == nil and CSS.parseSelector("p > ~ span") == nil,
+	"Incomplete sibling combinators rejected"
+)
+local calculate = load("src/CSS/Calculation")
+check(calculate("calc(10px + 2px * 3)") == "16px", "Calc operator precedence")
+check(
+	calculate("calc(1px / 0)") == nil and calculate("calc(1px + 2%)") == nil,
+	"Invalid and incompatible dimensions rejected"
+)
+local expand = load("src/CSS/Variables")
+check(
+	(expand("var(--missing, var(--fallback, red))", {}) or ""):match("^%s*(.-)%s*$") == "red",
+	"Nested variable fallback"
+)
+check(expand("var(--a)", { ["--a"] = "var(--b)", ["--b"] = "var(--a)" }) == nil, "Variable cycle terminates")
+check(
+	resolve("p { width:2em; font-size:24px; font-family:system-ui }").Width == "48px",
+	"Em sizing uses final font size"
+)
+local inheritedLine = CSS.resolve(
+	{ CSS.parse("p {line-height:inherit}") },
+	node,
+	{},
+	{ LineHeight = 1.5 },
+	{ LineHeight = "Normal" }
+)
+check(inheritedLine.LineHeight == 1.5, "Explicit line-height inheritance replaces defaults")
+check(
+	#CSS.validate({ GridTemplateColumns = 3, GridColumn = 2, FlexGrow = 1, FlexShrink = 0 }).Diagnostics == 0,
+	"Grid and flex PascalCase fields validate"
+)
+check(
+	#CSS.validate({ GridTemplateColumns = 0, GridColumn = 1.5, FlexGrow = -1 }).Diagnostics == 3,
+	"Invalid grid and flex fields are rejected"
+)
+check(#CSS.declarations("width:var(--size)").Diagnostics == 1, "Context-dependent inline CSS cannot disappear silently")
 print(`{count} CSS and component coverage checks passed.`)

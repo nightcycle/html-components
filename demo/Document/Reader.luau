@@ -6,6 +6,7 @@ local React = require(storage.Packages.React)
 -- Modules
 local Samples = require(script.Parent.Samples)
 -- Components
+local Asset = require(script.Parent.Asset)
 -- Contexts
 -- Hooks
 -- Types
@@ -44,11 +45,16 @@ local function textContent(nodes: { HTML.DocumentNode }): string
 	return table.concat(parts)
 end
 -- Class
-return function(sample: Samples.Sample): Report
+return function(sample: Samples.Sample, viewportWidth: number?): Report
 	local document = HTML.Document.parse(sample.HTML)
 	local issues: { string } = {}
 	local tree: { string } = {}
-	local sheet: HTML.StyleSheet = { Rules = {}, Diagnostics = {} }
+	local sheet = HTML.CSS.parse([[html,body {color:black; font-size:16px; font-weight:normal; line-height:normal}
+a {display:inline; height:auto; color:blue; text-decoration:underline}
+button {display:inline-block; height:auto; background-color:transparent; color:black; border-radius:0px; padding:2px 6px}
+img {display:inline-block; height:auto}
+blockquote {padding:0; background-color:transparent; font-style:normal}
+]])
 	local elements, attributes, texts, loaded = 0, 0, 0, 0
 	local function inspect(nodes: { HTML.DocumentNode }, depth: number)
 		for _, node in nodes do
@@ -104,10 +110,12 @@ return function(sample: Samples.Sample): Report
 			table.insert(issues, `CSS: stylesheet was not supplied: {resource.Href or "inline style"}`)
 		end
 	end
-	local function render(nodes: { HTML.DocumentNode }): { [string]: React.ReactNode }
+	local function render(nodes: { HTML.DocumentNode }, parentPath: string): { [string]: React.ReactNode }
 		local children: { [string]: React.ReactNode } = {}
+		local previous: { HTML.Node } = {}
 		for index, node in nodes do
 			local key = tostring(index)
+			local path = if parentPath == "" then key else parentPath .. "." .. key
 			if node.Kind == "Text" then
 				local content: { HTML.ContentNode } = { node.Text }
 				children[key] = e(HTML.Content, { Source = content, OrderOffset = index - 1 } :: HTML.ContentProperties)
@@ -129,13 +137,56 @@ return function(sample: Samples.Sample): Report
 				local hidden = HTML.Document.attribute(node, "hidden") ~= nil
 				local kind = kinds[node.Tag]
 				local component = components[node.Tag]
+				local name = id or "HTML_" .. path
+				local siblings = table.clone(previous)
+				local classes: { string } = {}
+				for token in (className or ""):gmatch("%S+") do
+					table.insert(classes, token)
+				end
+				table.insert(previous, {
+					Tag = (if component then node.Tag else "Div") :: HTML.Tag,
+					Id = id,
+					Classes = classes,
+					Hidden = hidden,
+					PreviousSiblings = siblings,
+				})
 				if node.Namespace ~= "HTML" or kind == "Image" or kind == "Video" then
+					local asset = if sample.Assets then sample.Assets[path] else nil
+					if asset then
+						local properties: HTML.ImgProperties = {
+							Name = name,
+							Id = id,
+							ClassName = className,
+							CSS = style,
+							Hidden = hidden,
+							SourceOrder = index,
+							PreviousSiblings = siblings,
+						}
+						children[key] = e(Asset, { Asset = asset, Properties = properties })
+						continue
+					end
 					table.insert(issues, `Preview: <{node.SourceName}> needs a Roblox asset/graphics mapping`)
+					if kind == "Image" then
+						local properties: HTML.ImgProperties = {
+							Name = name,
+							Id = id,
+							ClassName = className,
+							CSS = style,
+							Hidden = hidden,
+							SourceOrder = index,
+							PreviousSiblings = siblings,
+							IntrinsicSize = Vector2.new(24, 24),
+						}
+						children[key] = e(HTML.Img, properties)
+						continue
+					end
 					children[key] = e(
 						HTML.P,
 						{
+							Name = name,
 							Text = `[{node.SourceName}: {HTML.Document.attribute(node, "alt") or "graphics placeholder"}]`,
-							LayoutOrder = index,
+							SourceOrder = index,
+							PreviousSiblings = siblings,
 							Hidden = hidden,
 							CSS = { Color = "#667085", FontSize = 13 },
 						} :: HTML.PProperties
@@ -143,21 +194,33 @@ return function(sample: Samples.Sample): Report
 				elseif kind == "Text" then
 					children[key] = e(
 						component,
-						{ Id = id, ClassName = className, CSS = style, Hidden = hidden, LayoutOrder = index, Text = "" } :: HTML.TextProperties,
-						render(node.Children)
+						{
+							Name = name,
+							Id = id,
+							ClassName = className,
+							CSS = style,
+							Hidden = hidden,
+							SourceOrder = index,
+							PreviousSiblings = siblings,
+							Text = "",
+						} :: HTML.TextProperties,
+						render(node.Children, path)
 					)
 				elseif kind == "Button" then
 					children[key] = e(
 						component,
 						{
 							Id = id,
+							Name = name,
 							ClassName = className,
 							CSS = style,
 							Hidden = hidden,
-							LayoutOrder = index,
-							Text = textContent(node.Children),
+							SourceOrder = index,
+							PreviousSiblings = siblings,
+							Text = "",
 							Disabled = HTML.Document.attribute(node, "disabled") ~= nil,
-						} :: HTML.ButtonProperties
+						} :: HTML.ButtonProperties,
+						render(node.Children, path)
 					)
 				elseif kind == "Input" then
 					children[key] = e(
@@ -167,8 +230,10 @@ return function(sample: Samples.Sample): Report
 							ClassName = className,
 							CSS = style,
 							Hidden = hidden,
-							LayoutOrder = index,
+							SourceOrder = index,
+							PreviousSiblings = siblings,
 							DefaultValue = HTML.Document.attribute(node, "value") or textContent(node.Children),
+							Name = name,
 							Placeholder = HTML.Document.attribute(node, "placeholder"),
 							Disabled = HTML.Document.attribute(node, "disabled") ~= nil,
 						} :: HTML.InputProperties
@@ -181,8 +246,10 @@ return function(sample: Samples.Sample): Report
 							ClassName = className,
 							CSS = style,
 							Hidden = hidden,
-							LayoutOrder = index,
+							SourceOrder = index,
+							PreviousSiblings = siblings,
 							Value = tonumber(HTML.Document.attribute(node, "value") or "0"),
+							Name = name,
 							Max = tonumber(HTML.Document.attribute(node, "max") or "1"),
 						} :: HTML.MeterProperties
 					)
@@ -194,12 +261,14 @@ return function(sample: Samples.Sample): Report
 						component or HTML.Div,
 						{
 							Id = id,
+							Name = name,
 							ClassName = className,
 							CSS = style,
 							Hidden = hidden,
-							LayoutOrder = index,
+							SourceOrder = index,
+							PreviousSiblings = siblings,
 						} :: HTML.ContainerProperties,
-						render(node.Children)
+						render(node.Children, path)
 					)
 				end
 			end
@@ -209,10 +278,11 @@ return function(sample: Samples.Sample): Report
 	local preview = if document.Success
 		then e(HTML.StyleProvider, {
 			StyleSheet = sheet,
+			ViewportWidth = viewportWidth,
 			OnDiagnostics = function(_diagnostics: { HTML.Diagnostic })
 				-- Retained in this report's Issues and StyleSheet for the Diagnostics tab.
 			end,
-		}, render(document.Children))
+		}, render(document.Children, ""))
 		else nil
 	return {
 		Document = document,

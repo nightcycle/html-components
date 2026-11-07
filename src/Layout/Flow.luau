@@ -165,7 +165,7 @@ function Flow.layout(items: { Item }, options: Options): Result
 		if item.Display == "None" then
 			continue
 		end
-		if item.Display == "Block" or item.Display == "Flex" then
+		if item.Display == "Block" or item.Display == "Flex" or item.Display == "Grid" then
 			flushRun(true)
 			pending = nil
 			flushLine()
@@ -187,9 +187,11 @@ function Flow.layout(items: { Item }, options: Options): Result
 			flushLine(true)
 			previousBlock = false
 		elseif item.Display == "Inline" and item.Text and item.Measure then
-			previousBlock = false
 			local mode = item.WhiteSpace or "Normal"
 			local preserve = mode == "Pre" or mode == "PreWrap"
+			if preserve or item.Text:find("%S") then
+				previousBlock = false
+			end
 			local wrap = mode ~= "Pre" and mode ~= "Nowrap"
 			local source = item.Text:gsub("\r\n", "\n"):gsub("\r", "\n")
 			local position = 1

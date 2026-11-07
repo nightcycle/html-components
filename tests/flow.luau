@@ -95,6 +95,8 @@ local block = {
 }
 result = Flow.layout({ block, block }, options(100))
 check(result.Fragments[2].Y == 60, "Adjacent block margins collapse")
+result = Flow.layout({ block, text("\n    "), block }, options(100))
+check(result.Fragments[2].Y == 60, "Source indentation does not interrupt block margin collapse")
 local hidden = table.clone(atomic)
 hidden.Display = "None"
 check(Flow.layout({ hidden }, options(80)).Height == 0, "Display None contributes no line")

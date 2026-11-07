@@ -67,7 +67,7 @@ for _, source in
 		"<![CDATA[x",
 		"]]>x",
 		"<br>x</br>",
-		'<span style="position:absolute"/>',
+		'<span style="position:sticky"/>',
 		'<span style="color:red !important"/>',
 		"<Span></span>",
 		"\0",

@@ -2,6 +2,8 @@
 local Selector = require(script.Selector)
 local Types = require(script.Parent.Types)
 local Values = require(script.Values)
+local calculate = require(script.Calculation)
+local expandVariables = require(script.Variables)
 local CSS = {}
 
 export type Style = Types.Style
@@ -24,6 +26,12 @@ register("length", {
 	"padding-bottom",
 	"padding-left",
 	"gap",
+	"row-gap",
+	"column-gap",
+	"top",
+	"right",
+	"bottom",
+	"left",
 	"margin-top",
 	"margin-right",
 	"margin-bottom",
@@ -35,16 +43,20 @@ register("length", {
 })
 register("pixels", { "min-width", "min-height", "max-width", "max-height", "font-size", "border-width" })
 register("integer", { "order", "z-index" })
+register("number", { "flex-grow", "flex-shrink" })
 register("color", { "color", "background-color", "border-color" })
 local options: { [string]: { string } } = {
-	display = { "block", "inline", "inline-block", "flex", "inline-flex", "none" },
+	display = { "block", "inline", "inline-block", "flex", "inline-flex", "grid", "none" },
 	["vertical-align"] = { "baseline", "top", "middle", "bottom" },
 	["flex-direction"] = { "row", "column" },
 	["flex-wrap"] = { "nowrap", "wrap" },
 	["justify-content"] = { "flex-start", "center", "flex-end", "space-between", "space-around", "space-evenly" },
-	["align-items"] = { "flex-start", "center", "flex-end" },
-	["font-family"] = { "sans-serif", "serif", "monospace" },
-	["font-weight"] = { "normal", "bold" },
+	["align-items"] = { "flex-start", "center", "flex-end", "stretch", "baseline" },
+	["align-self"] = { "auto", "flex-start", "center", "flex-end", "stretch", "baseline" },
+	["place-self"] = { "auto", "center", "stretch" },
+	position = { "static", "relative", "absolute", "fixed" },
+	["font-family"] = { "sans-serif", "serif", "monospace", "system" },
+	["font-weight"] = { "thin", "extra-light", "light", "normal", "medium", "semi-bold", "bold", "extra-bold", "heavy" },
 	["font-style"] = { "normal", "italic" },
 	["text-align"] = { "left", "center", "right" },
 	["text-decoration"] = { "none", "underline", "line-through" },
@@ -54,13 +66,47 @@ local options: { [string]: { string } } = {
 for name, allowed in options do
 	properties[name] = { Key = Values.pascal(name), Kind = "option", Allowed = allowed }
 end
-local styleKeys: { [string]: boolean } =
-	{ Padding = true, Margin = true, LineHeight = true, BorderRadius = true, BoxShadow = true }
+local styleKeys: { [string]: boolean } = {
+	Padding = true,
+	Margin = true,
+	LineHeight = true,
+	BorderRadius = true,
+	BoxShadow = true,
+	GridTemplateColumns = true,
+	GridColumn = true,
+}
 for _, property in properties do
 	styleKeys[property.Key] = true
 end
 
 local function declaration(name: string, value: string): Types.Style?
+	if name == "box-sizing" and value == "border-box" then
+		return {}
+	end
+	if name == "border-style" and value == "solid" then
+		return {}
+	end
+	if name == "grid-template-columns" then
+		local count = tonumber(value:match("^repeat%(%s*(%d+)%s*,%s*minmax%(%s*0%s*,%s*1fr%s*%)%s*%)$"))
+		return if count and count > 0 and count <= 64 then { GridTemplateColumns = count } else nil
+	end
+	if name == "grid-column" then
+		local first, second = value:match("^span%s+(%d+)%s*/%s*span%s+(%d+)$")
+		return if first
+				and first == second
+				and tonumber(first)
+				and tonumber(first) > 0
+			then { GridColumn = tonumber(first) }
+			else nil
+	end
+	if name == "font-weight" then
+		local weights =
+			{ "thin", "extra-light", "light", "normal", "medium", "semi-bold", "bold", "extra-bold", "heavy" }
+		local numeric = tonumber(value)
+		if numeric and numeric % 100 == 0 and numeric >= 100 and numeric <= 900 then
+			value = weights[numeric / 100]
+		end
+	end
 	if name == "font-family" then
 		local family: Types.FontFamily? = Values.fontFamily(value)
 		if not family then
@@ -136,7 +182,7 @@ local function declaration(name: string, value: string): Types.Style?
 		}
 	end
 	if name == "box-shadow" then
-		if value == "none" or Values.shadow(value) then
+		if Values.shadows(value) then
 			return { BoxShadow = value :: string } :: Types.Style
 		end
 		return nil
@@ -156,12 +202,12 @@ local function declaration(name: string, value: string): Types.Style?
 		elseif not name:match("^margin%-") and (length.Scale < 0 or length.Offset < 0) then
 			return nil
 		end
-	elseif property.Kind == "pixels" or property.Kind == "integer" then
+	elseif property.Kind == "pixels" or property.Kind == "integer" or property.Kind == "number" then
 		local number = if property.Kind == "pixels" then Values.pixels(value) else tonumber(value)
 		if not number or number ~= number or math.abs(number) == math.huge then
 			return nil
 		end
-		if property.Kind == "pixels" and number < 0 then
+		if (property.Kind == "pixels" or property.Kind == "number") and number < 0 then
 			return nil
 		end
 		if property.Kind == "integer" and number % 1 ~= 0 then
@@ -182,33 +228,60 @@ local function declaration(name: string, value: string): Types.Style?
 	return ({ [property.Key] = parsed } :: unknown) :: Types.Style
 end
 
-local function parseDeclarations(source: string, diagnostics: { Types.Diagnostic }): (Types.Style, Types.Style)
+local function parseDeclarations(
+	source: string,
+	diagnostics: { Types.Diagnostic }
+): (Types.Style, Types.Style, { Types.CSSDeclaration })
 	local normal: Types.Style, important: Types.Style = {}, {}
+	local declarations: { Types.CSSDeclaration } = {}
 	for _, text in Values.split(source, ";") do
 		if text == "" then
 			continue
 		end
-		local name, value = text:match("^([%a%-]+)%s*:%s*(.-)%s*$")
+		local name, value = text:match("^([%w_%-]+)%s*:%s*(.-)%s*$")
 		if not name or not value then
 			table.insert(diagnostics, { Message = "Malformed declaration", Source = text })
 			continue
 		end
-		name = string.lower(name)
+		name = if name:sub(1, 2) == "--" then name else string.lower(name)
 		local isImportant = value:match("!%s*important%s*$") ~= nil
 		value = Values.trim((value:gsub("!%s*important%s*$", "")))
-		local style = declaration(name, value)
+		local deferred = name:sub(1, 2) == "--"
+			or (
+				styleKeys[Values.pascal(name)]
+				and (
+					value:find("var(", 1, true) ~= nil
+					or value:find("calc(", 1, true) ~= nil
+					or value == "inherit"
+					or value == "initial"
+					or value == "unset"
+					or value == "currentColor"
+					or value == "currentcolor"
+					or value:match("[%d%.]em$") ~= nil
+				)
+			)
+		local style = if deferred then {} else declaration(name, value)
 		if style then
 			Values.merge(if isImportant then important else normal, style)
+			table.insert(declarations, { Name = name, Value = value, Important = isImportant })
 		else
 			table.insert(diagnostics, { Message = "Unsupported property or value", Source = text })
 		end
 	end
-	return normal, important
+	return normal, important, declarations
 end
 
 function CSS.declarations(source: string): Types.DeclarationResult
 	local diagnostics: { Types.Diagnostic } = {}
-	local style, important = parseDeclarations(source, diagnostics)
+	local style, important, declarations = parseDeclarations(source, diagnostics)
+	for _, item in declarations do
+		if not declaration(item.Name, item.Value) then
+			table.insert(diagnostics, {
+				Message = "Context-dependent declarations require stylesheet rules",
+				Source = item.Name .. ": " .. item.Value,
+			})
+		end
+	end
 	return { Style = style, Important = important, Diagnostics = diagnostics }
 end
 
@@ -241,9 +314,11 @@ function CSS.validate(source: unknown): Types.DeclarationResult
 			end
 		elseif property and property.Kind == "color" and type(value) == "string" then
 			valid = Values.color(value) ~= nil
-		elseif property and (property.Kind == "pixels" or property.Kind == "integer") then
+		elseif property and (property.Kind == "pixels" or property.Kind == "integer" or property.Kind == "number") then
 			valid = finite
-				and (if property.Kind == "pixels" then (value :: number) >= 0 else (value :: number) % 1 == 0)
+				and (if property.Kind == "integer" then (value :: number) % 1 == 0 else (value :: number) >= 0)
+		elseif key == "GridTemplateColumns" or key == "GridColumn" then
+			valid = finite and (value :: number) % 1 == 0 and (value :: number) >= 1 and (value :: number) <= 64
 		elseif
 			(property and property.Kind == "length")
 			or key == "Padding"
@@ -260,7 +335,7 @@ function CSS.validate(source: unknown): Types.DeclarationResult
 			local pixels = if type(value) == "string" and value:match("px$") then Values.pixels(value) else nil
 			valid = (finite and (value :: number) >= 0) or value == "Normal" or (pixels ~= nil and pixels >= 0)
 		elseif key == "BoxShadow" and type(value) == "string" then
-			valid = value == "none" or Values.shadow(value) ~= nil
+			valid = Values.shadows(value) ~= nil
 		end
 		if key == "TextDecoration" and value == "UnderlineLineThrough" then
 			valid = true
@@ -277,8 +352,12 @@ function CSS.validate(source: unknown): Types.DeclarationResult
 	return result
 end
 
-function CSS.parse(source: string): Types.StyleSheet
+function CSS.parse(source: string, nesting: number?): Types.StyleSheet
 	local sheet: Types.StyleSheet = { Rules = {}, Diagnostics = {} }
+	if (nesting or 0) >= 32 then
+		table.insert(sheet.Diagnostics, { Message = "CSS nesting limit exceeded", Source = "@media" })
+		return sheet
+	end
 	local stripped = source:gsub("/%*.-%*/", "")
 	local position = 1
 	while position <= #stripped do
@@ -306,17 +385,36 @@ function CSS.parse(source: string): Types.StyleSheet
 			break
 		end
 		local body = stripped:sub(opening + 1, closing - 2)
-		if selectorText:find("@", 1, true) or body:find("{", 1, true) then
+		local minimum = selectorText:match("^@media%s*%(%s*min%-width%s*:%s*([%d%.]+px)%s*%)$")
+		local maximum = selectorText:match("^@media%s*%(%s*max%-width%s*:%s*([%d%.]+px)%s*%)$")
+		if minimum or maximum then
+			local nested = CSS.parse(body, (nesting or 0) + 1)
+			for _, rule in nested.Rules do
+				if minimum then
+					rule.MinWidth = math.max(rule.MinWidth or 0, Values.pixels(minimum) or 0)
+				end
+				if maximum then
+					rule.MaxWidth = math.min(rule.MaxWidth or math.huge, Values.pixels(maximum) or math.huge)
+				end
+				table.insert(sheet.Rules, rule)
+			end
+			for _, diagnostic in nested.Diagnostics do
+				table.insert(sheet.Diagnostics, diagnostic)
+			end
+		elseif selectorText:find("@", 1, true) or body:find("{", 1, true) then
 			table.insert(
 				sheet.Diagnostics,
 				{ Message = "At-rules and nested rules are unsupported", Source = selectorText }
 			)
 		else
-			local style, important = parseDeclarations(body, sheet.Diagnostics)
+			local style, important, declarations = parseDeclarations(body, sheet.Diagnostics)
 			for _, text in Values.split(selectorText, ",") do
 				local selector = Selector.parse(text)
 				if selector then
-					table.insert(sheet.Rules, { Selector = selector, Style = style, Important = important })
+					table.insert(
+						sheet.Rules,
+						{ Selector = selector, Style = style, Important = important, Declarations = declarations }
+					)
 				else
 					table.insert(sheet.Diagnostics, { Message = "Unsupported selector", Source = text })
 				end
@@ -407,15 +505,22 @@ function CSS.resolve(
 	ancestors: { Types.Node },
 	inherited: Types.Style,
 	defaults: Types.Style,
-	inline: Types.Style?
-): Types.Style
+	inline: Types.Style?,
+	options: Types.CSSOptions?,
+	inheritedVariables: Types.CSSVariables?
+): (Types.Style, Types.CSSVariables)
 	local result = Values.merge(table.clone(inherited), normalize(defaults))
 	local matches: { { Rule: Types.Rule, Order: number } } = {}
 	local order = 0
 	for _, sheet in sheets do
 		for _, rule in sheet.Rules do
 			order += 1
-			if Selector.matches(rule.Selector, node, ancestors) then
+			local viewport = if options then options.ViewportWidth or 1280 else 1280
+			if
+				viewport >= (rule.MinWidth or 0)
+				and viewport <= (rule.MaxWidth or math.huge)
+				and Selector.matches(rule.Selector, node, ancestors)
+			then
 				table.insert(matches, { Rule = rule, Order = order })
 			end
 		end
@@ -433,16 +538,102 @@ function CSS.resolve(
 		end
 		return a.Order < b.Order
 	end)
-	for _, match in matches do
-		Values.merge(result, match.Rule.Style)
+	local variables = table.clone(inheritedVariables or {})
+	for _, important in { false, true } do
+		for _, match in matches do
+			for _, item in ipairs(match.Rule.Declarations or {}) do
+				if item.Important == important and item.Name:sub(1, 2) == "--" then
+					variables[item.Name] = item.Value
+				end
+			end
+		end
 	end
-	if inline then
-		Values.merge(result, normalize(inline))
+	local computedVariables: Types.CSSVariables = {}
+	for name, value in variables do
+		local expanded = expandVariables(value, variables)
+		if expanded then
+			computedVariables[name] = expanded
+		end
 	end
-	for _, match in matches do
-		Values.merge(result, match.Rule.Important)
+	local rootFont = if options then options.RootFontSize or 16 else 16
+	local function apply(item: Types.CSSDeclaration, target: Types.Style, fontSize: number)
+		if item.Name:sub(1, 2) == "--" then
+			return
+		end
+		local value = expandVariables(item.Value, computedVariables)
+		if not value then
+			return
+		end
+		value = Values.trim(value)
+		local property = properties[item.Name]
+		local key = if property then property.Key else Values.pascal(item.Name)
+		if styleKeys[key] and (value == "inherit" or value == "unset" or value == "initial") then
+			local inheritedRecord = (inherited :: unknown) :: { [string]: unknown }
+			local targetRecord = (target :: unknown) :: { [string]: unknown }
+			targetRecord[key] = if value == "initial" then nil else inheritedRecord[key]
+			if item.Name == "text-decoration" and not target.TextDecoration then
+				target.TextDecoration = "None"
+			end
+			return
+		end
+		if value:lower() == "currentcolor" then
+			value = target.Color or inherited.Color or "black"
+		end
+		value = value:gsub("([%+%-]?[%d%.]+r?em)", function(token: string)
+			local amount, unit = token:match("([%+%-]?[%d%.]+)(r?em)")
+			return tostring((tonumber(amount) or 0) * (if unit == "rem" then rootFont else fontSize)) .. "px"
+		end)
+		value = calculate(value)
+		if not value then
+			return
+		end
+		local parsed = declaration(item.Name, value)
+		if parsed then
+			Values.merge(target, parsed)
+		end
 	end
-	return result
+	-- Resolve font size before other em lengths, irrespective of declaration order.
+	local typography: Types.Style = table.clone(result)
+	for _, important in { false, true } do
+		for _, match in matches do
+			if match.Rule.Declarations then
+				for _, item in match.Rule.Declarations do
+					if item.Important == important and item.Name == "font-size" then
+						apply(item, typography, inherited.FontSize or 16)
+					end
+				end
+			else
+				local fontSize = (if important then match.Rule.Important else match.Rule.Style).FontSize
+				if fontSize then
+					typography.FontSize = fontSize
+				end
+			end
+		end
+		if not important and inline and inline.FontSize then
+			typography.FontSize = inline.FontSize
+		end
+	end
+	for _, important in { false, true } do
+		for _, match in matches do
+			if match.Rule.Declarations then
+				for _, item in match.Rule.Declarations do
+					if item.Important == important then
+						apply(
+							item,
+							result,
+							if item.Name == "font-size" then inherited.FontSize or 16 else typography.FontSize or 16
+						)
+					end
+				end
+			else
+				Values.merge(result, if important then match.Rule.Important else match.Rule.Style)
+			end
+		end
+		if not important and inline then
+			Values.merge(result, normalize(inline))
+		end
+	end
+	return result, computedVariables
 end
 
 CSS.matches = Selector.matches

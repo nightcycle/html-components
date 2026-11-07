@@ -22,6 +22,8 @@ local e = React.createElement
 -- Class
 return function(tag: Types.Tag, props: Properties, defaults: Types.Style): React.ReactNode
 	local state = useStyle(tag, props, defaults, props.Disabled)
+	local children = getChildren(props)
+	local layout = tag == "A" or children ~= nil
 	local _, native = RobloxComponents.TextButton({}, props)
 	native.Text = nil
 	local _, merged = RobloxComponents.TextButton(
@@ -36,7 +38,7 @@ return function(tag: Types.Tag, props: Properties, defaults: Types.Style): React
 		merged.Interactable = false
 		merged.Selectable = false
 	end
-	Root.props(merged, props, state)
+	Root.props(merged, props, state, layout)
 	Root.event(merged, React.Event.Activated, function()
 		if props.Disabled then
 			return
@@ -48,5 +50,5 @@ return function(tag: Types.Tag, props: Properties, defaults: Types.Style): React
 			props.OnNavigate(props.Href)
 		end
 	end)
-	return e(RobloxComponents.TextButton(merged, {}, Root.children(state, getChildren(props), false)))
+	return e(RobloxComponents.TextButton(merged, {}, Root.children(state, children, layout)))
 end

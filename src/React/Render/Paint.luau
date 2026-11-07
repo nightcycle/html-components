@@ -5,6 +5,7 @@ local React = require(script.Parent.Parent.Parent.Parent.React)
 local RobloxComponents = require(script.Parent.Parent.Parent.Parent.RobloxComponents)
 -- Modules
 local Decoration = require(script.Parent.Decoration)
+local Metrics = require(script.Parent.Parent.Parent.Layout.Metrics)
 local Values = require(script.Parent.Parent.Parent.CSS.Values)
 -- Components
 -- Hooks
@@ -16,6 +17,7 @@ local Types = require(script.Parent.Parent.Parent.Types)
 -- metrics are (hhea ascent - descent + lineGap) / unitsPerEm.
 local FONT_LINE_HEIGHT: { [Types.FontFamily]: number } = {
 	SansSerif = 1.257,
+	System = 1.26,
 	Serif = 1.257,
 	Monospace = 2701 / 2048,
 }
@@ -49,26 +51,18 @@ function Paint.box(style: Types.Style, tag: string): RobloxComponents.GuiObjectP
 		Visible = style.Display ~= "None",
 		ClipsDescendants = style.Overflow == "Hidden",
 		LayoutOrder = style.Order or 0,
-		ZIndex = style.ZIndex or 1,
+		ZIndex = style.ZIndex or (if style.Position == "Fixed" or style.Position == "Absolute" then 2 else 1),
 	}
 end
 
 function Paint.text(style: Types.Style, tag: string, text: string): RobloxComponents.TextLabelProperties
 	local props = Paint.box(style, tag) :: RobloxComponents.TextLabelProperties
 	local color, transparency = Values.color(style.Color or "#182033")
-	local family = if style.FontFamily == "Monospace"
-		then "RobotoMono"
-		elseif style.FontFamily == "Serif" then "Merriweather"
-		else "SourceSansPro"
 	props.Text = text
 	props.TextColor3 = color or Color3.new()
 	props.TextTransparency = transparency
 	props.TextSize = Paint.lineHeight(style)
-	props.FontFace = Font.new(
-		`rbxasset://fonts/families/{family}.json`,
-		if style.FontWeight == "Bold" then Enum.FontWeight.Bold else Enum.FontWeight.Regular,
-		if style.FontStyle == "Italic" then Enum.FontStyle.Italic else Enum.FontStyle.Normal
-	)
+	props.FontFace = Metrics.face(style)
 	props.TextXAlignment = if style.TextAlign == "Center"
 		then Enum.TextXAlignment.Center
 		elseif style.TextAlign == "Right" then Enum.TextXAlignment.Right
@@ -79,7 +73,7 @@ function Paint.text(style: Types.Style, tag: string, text: string): RobloxCompon
 	return props
 end
 
-function Paint.children(style: Types.Style, layout: boolean): { [string]: React.ReactNode }
+function Paint.children(style: Types.Style, _layout: boolean): { [string]: React.ReactNode }
 	local children: { [string]: React.ReactNode } = {}
 	local border = style.BorderWidth or 0
 	local function inset(value: Types.Length): UDim
@@ -129,16 +123,18 @@ function Paint.children(style: Types.Style, layout: boolean): { [string]: React.
 		}, {}))
 	end
 	if style.BoxShadow and style.BoxShadow ~= "none" then
-		local shadow = Values.shadow(style.BoxShadow)
-		if shadow then
-			children.Shadow = e(RobloxComponents.UIShadow({
+		for index, shadow in ipairs(Values.shadows(style.BoxShadow) or {}) do
+			if shadow.Transparency >= 1 then
+				continue
+			end
+			children[if index == 1 then "Shadow" else `Shadow{index}`] = e(RobloxComponents.UIShadow({
 				Offset = shadow.Offset,
 				BlurRadius = shadow.Blur,
 				Spread = shadow.Spread,
 				Color = shadow.Color,
 				Transparency = shadow.Transparency,
 				Inset = shadow.Inset,
-				ZIndex = -1,
+				ZIndex = -index,
 			}, {}))
 		end
 	end
@@ -149,33 +145,7 @@ function Paint.children(style: Types.Style, layout: boolean): { [string]: React.
 			MaxSize = Vector2.new(math.max(minX, style.MaxWidth or 100000), math.max(minY, style.MaxHeight or 100000)),
 		}, {}))
 	end
-	if layout and (style.Display == "Flex" or style.Display == "InlineFlex") then
-		local row = style.FlexDirection ~= "Column"
-		local justify = style.JustifyContent
-		local horizontal = if row then justify else style.AlignItems
-		local vertical = if row then style.AlignItems else justify
-		local flex = if justify == "SpaceBetween"
-			then Enum.UIFlexAlignment.SpaceBetween
-			elseif justify == "SpaceAround" then Enum.UIFlexAlignment.SpaceAround
-			elseif justify == "SpaceEvenly" then Enum.UIFlexAlignment.SpaceEvenly
-			else Enum.UIFlexAlignment.None
-		children.Layout = e(RobloxComponents.UIListLayout({
-			FillDirection = if row then Enum.FillDirection.Horizontal else Enum.FillDirection.Vertical,
-			SortOrder = Enum.SortOrder.LayoutOrder,
-			Padding = Values.length(style.Gap or 0),
-			HorizontalAlignment = if horizontal == "Center"
-				then Enum.HorizontalAlignment.Center
-				elseif horizontal == "FlexEnd" then Enum.HorizontalAlignment.Right
-				else Enum.HorizontalAlignment.Left,
-			VerticalAlignment = if vertical == "Center"
-				then Enum.VerticalAlignment.Center
-				elseif vertical == "FlexEnd" then Enum.VerticalAlignment.Bottom
-				else Enum.VerticalAlignment.Top,
-			HorizontalFlex = if row then flex else Enum.UIFlexAlignment.None,
-			VerticalFlex = if row then Enum.UIFlexAlignment.None else flex,
-			Wraps = style.FlexWrap == "Wrap",
-		}, {}))
-	end
+
 	return children
 end
 

@@ -38,11 +38,11 @@ function Selector.parse(source: string, pascalCase: boolean?): Types.Selector?
 				return nil
 			end
 			index = after
-		elseif char:match("%s") or char == ">" then
+		elseif char:match("%s") or char == ">" or char == "+" or char == "~" then
 			if index > start then
 				table.insert(tokens, source:sub(start, index - 1))
 			end
-			if char == ">" then
+			if char == ">" or char == "+" or char == "~" then
 				table.insert(tokens, char)
 			end
 			index += 1
@@ -58,11 +58,11 @@ function Selector.parse(source: string, pascalCase: boolean?): Types.Selector?
 	local specificity: Types.Specificity = { Ids = 0, Classes = 0, Tags = 0 }
 	local relation: Types.SelectorRelation? = nil
 	for _, token in tokens do
-		if token == ">" then
-			if #parts == 0 or relation == "Child" then
+		if token == ">" or token == "+" or token == "~" then
+			if #parts == 0 or relation ~= "Descendant" then
 				return nil
 			end
-			relation = "Child"
+			relation = if token == ">" then "Child" elseif token == "+" then "AdjacentSibling" else "SubsequentSibling"
 		else
 			local part: Types.SelectorPart = { Classes = {}, States = {}, Relation = relation }
 			local cursor = 1
@@ -102,6 +102,15 @@ function Selector.parse(source: string, pascalCase: boolean?): Types.Selector?
 					table.insert(part.Classes, name)
 					specificity.Classes += 1
 				else
+					if
+						name == (if pascalCase then "Not" else "not")
+						and token:sub(after, after + 9) == (if pascalCase then "([Hidden])" else "([hidden])")
+					then
+						table.insert(part.States, "NotHidden")
+						specificity.Classes += 1
+						cursor = after + 10
+						continue
+					end
 					local states = if pascalCase
 						then { "Hover", "Active", "Focus", "Disabled" }
 						else { "hover", "active", "focus", "disabled" }
@@ -117,7 +126,7 @@ function Selector.parse(source: string, pascalCase: boolean?): Types.Selector?
 			relation = "Descendant"
 		end
 	end
-	if #parts == 0 or relation == "Child" or Values.trim(source) == "" then
+	if #parts == 0 or relation ~= "Descendant" or Values.trim(source) == "" then
 		return nil
 	end
 	return { Parts = parts, Specificity = specificity }
@@ -136,6 +145,9 @@ local function matchesPart(part: Types.SelectorPart, node: Types.Node): boolean
 		end
 	end
 	for _, state in part.States do
+		if state == "NotHidden" and node.Hidden then
+			return false
+		end
 		if state == "Hover" and not node.Hover then
 			return false
 		end
@@ -154,24 +166,40 @@ end
 
 function Selector.matches(selector: Types.Selector, node: Types.Node, ancestors: { Types.Node }): boolean
 	local parts = selector.Parts
-	local function visit(partIndex: number, ancestorIndex: number): boolean
+	local function visit(partIndex: number, ancestorIndex: number, current: Types.Node): boolean
 		if partIndex == 0 then
 			return true
 		end
 		local childPart = parts[partIndex + 1]
+		if childPart.Relation == "AdjacentSibling" or childPart.Relation == "SubsequentSibling" then
+			local siblings: { Types.Node } = current.PreviousSiblings or {}
+			for index = #siblings, if childPart.Relation == "AdjacentSibling" then #siblings else 1, -1 do
+				local sibling = siblings[index]
+				if
+					sibling
+					and matchesPart(parts[partIndex], sibling)
+					and visit(partIndex - 1, ancestorIndex, sibling)
+				then
+					return true
+				end
+			end
+			return false
+		end
 		if childPart.Relation == "Child" then
 			return ancestorIndex > 0
 				and matchesPart(parts[partIndex], ancestors[ancestorIndex])
-				and visit(partIndex - 1, ancestorIndex - 1)
+				and visit(partIndex - 1, ancestorIndex - 1, ancestors[ancestorIndex])
 		end
 		for index = ancestorIndex, 1, -1 do
-			if matchesPart(parts[partIndex], ancestors[index]) and visit(partIndex - 1, index - 1) then
+			if
+				matchesPart(parts[partIndex], ancestors[index]) and visit(partIndex - 1, index - 1, ancestors[index])
+			then
 				return true
 			end
 		end
 		return false
 	end
-	return matchesPart(parts[#parts], node) and visit(#parts - 1, #ancestors)
+	return matchesPart(parts[#parts], node) and visit(#parts - 1, #ancestors, node)
 end
 
 return Selector

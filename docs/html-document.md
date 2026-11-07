@@ -44,7 +44,18 @@ lune run scripts/build-local path/to/index.html
 
 Open `.tools/local-demo/html-components-demo.rbxl` and select **Documents → Local fixture**. The local build embeds only the supplied HTML and locally resolved stylesheets. It does not upload graphics or execute scripts. Its output is outside release artifact globs. Ordinary `scripts/build` and CI always produce the owned example with an empty local-fixture slot, verified during build.
 
-The preview maps the component catalog, mixed text, IDs/classes, supported inline styles, input values, and meter values. Unknown tags use diagnosed generic containers; SVG/MathML, images, and video use diagnosed placeholders. Button/link text is flattened, event handlers/navigation are not bound, and arbitrary HTML attributes are not forwarded to Roblox. Media conditions are diagnosed and skipped. This preview is intended to expose importer gaps, not certify visual parity or serve as a production import API.
+The preview maps the component catalog, mixed text, IDs/classes, supported inline styles, input values, and meter values. Links/buttons preserve structured children and graphics. Unknown tags use diagnosed generic containers. Event handlers/navigation are not bound, and arbitrary HTML attributes are not forwarded to Roblox. Simple width media queries respond to the logical preview viewport. The supported CSS/layout subset is documented in [compatibility.md](compatibility.md); this is not a production import API.
+
+For a local visual comparison, optionally prepare graphics and embed them in the local development build:
+
+```sh
+python scripts/capture-document.py path/to/index.html .tools/local-document/assets --width 1440 --height 1000
+lune run scripts/build-local path/to/index.html .tools/local-document/assets/manifest.json
+```
+
+This requires Python, Playwright/Chromium, and Pillow. The capture disables document JavaScript and remote requests. It exports reference rectangles/screenshots, rasterizes local images and inline SVG paint, and writes raw RGBA files. Browser positions and computed layout styles are never renderer input. The optional manifest embeds compressed pixels only in the ignored local place; the demo creates and destroys EditableImages locally. No Roblox uploads are performed. Missing external graphics still produce diagnostics and may differ from the live website. Use the same document and viewport for graphics capture and comparison; SVG paint is a snapshot, not an interactive SVG renderer.
+
+Save Studio geometry as `studio-bounds.json` (`Records` with `Name`, `X`, `Y`, `Width`, `Height`, `Visible`; plus `Viewport` and `Frame` rectangles) and its screenshot as `studio.jpg` beside the browser files. `python scripts/compare-document-layout.py .tools/local-document/assets` retains every matched rectangle difference and creates a cropped side-by-side image. Names use the document ID or the stable `HTML_` child-node path. Keep all reference content, graphics and reports ignored.
 
 `Tests.Document()` checks native Instance requires, stylesheet discovery, the example's component tree, all inspector tabs, and any local fixture. `Tests.Stories()` mounts all 66 stories. Build validation checks that script child names do not collide with native Instance properties: the parser's source helper is named `SourceText` because `ModuleScript.Source` resolves to code text even when a child module has that name.
 

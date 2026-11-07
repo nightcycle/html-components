@@ -69,10 +69,11 @@ return function(props: Properties): React.ReactNode
 	local localSample = localFixture.Sample
 	local useLocal, setLocal = React.useState(props.InitialLocal == true)
 	local tab, setTab = React.useState(props.InitialTab or "Preview")
+	local viewportWidth, setViewportWidth = React.useState(1024)
 	local sample = if useLocal and localSample then localSample else example
 	local report = React.useMemo(function()
-		return read(sample)
-	end, { sample })
+		return read(sample, viewportWidth)
+	end, { sample, viewportWidth } :: { unknown })
 	local tabs: { [string]: React.ReactNode } = {}
 	for index, name in TABS do
 		tabs[name] = button(name, name, (index - 1) * 128, 116, tab == name, true, function()
@@ -170,7 +171,19 @@ return function(props: Properties): React.ReactNode
 				ScrollingDirection = Enum.ScrollingDirection.Y,
 				ScrollBarThickness = 6,
 				ClipsDescendants = true,
-			}, {}, {
+			}, {
+				[React.Change.AbsoluteSize] = function(viewport: ScrollingFrame)
+					local scale, ancestor = 1, viewport.Parent
+					while ancestor do
+						local scaler = ancestor:FindFirstChildWhichIsA("UIScale")
+						if scaler then
+							scale *= scaler.Scale
+						end
+						ancestor = ancestor.Parent
+					end
+					setViewportWidth(math.max(1, viewport.AbsoluteSize.X / math.max(scale, 0.001) - 40))
+				end,
+			}, {
 				Padding = e(Roblox.UIPadding({
 					PaddingTop = UDim.new(0, 20),
 					PaddingLeft = UDim.new(0, 20),

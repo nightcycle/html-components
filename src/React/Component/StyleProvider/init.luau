@@ -60,6 +60,6 @@ return function(props: Properties): React.ReactNode
 		end
 		return result
 	end, { compiled or false, props.StyleSheet or false } :: { unknown })
-	local _, scope = useStyleScope({ Sheets = sheets })
+	local _, scope = useStyleScope({ Sheets = sheets, ViewportWidth = props.ViewportWidth })
 	return e(StyleContext.Provider, { value = scope }, getChildren(props))
 end

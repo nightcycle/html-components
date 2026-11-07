@@ -39,6 +39,8 @@ return function(tag: Types.Tag, props: Types.Common, defaults: Types.Style, disa
 		Active = active and not disabled,
 		Focus = focus,
 		Disabled = disabled,
+		Hidden = props.Hidden,
+		PreviousSiblings = props.PreviousSiblings,
 	}
 	local style, scope = useStyleScope({ Node = node, Defaults = defaults, Inline = props.CSS })
 	return {

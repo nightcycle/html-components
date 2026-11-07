@@ -24,6 +24,8 @@ return function(): (string) -> any
 			"src/CSS/Values.luau",
 			"src/CSS/Selector.luau",
 			"src/CSS/Escape.luau",
+			"src/CSS/Variables.luau",
+			"src/CSS/Calculation.luau",
 			"src/React/Context/StyleStore.luau",
 			"src/React/Render/Decoration.luau",
 			"src/Markup/init.luau",

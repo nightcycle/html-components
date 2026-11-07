@@ -82,7 +82,7 @@ local element = e(HTML.Strong, badge)
 
 Normal inline text ignores box width/height and min/max dimensions inside a flow. Its root remains a `TextLabel`; wrapped fragments are native child labels, so nested components retain their identities and refs. `InlineBlock` remains an atomic box. `InlineFlex` combines an atomic outer box with the existing native flex layout.
 
-`LineHeight = 1.5` is a font-size multiplier; `LineHeight = "24px"` is an absolute line height. `WhiteSpace` accepts `Normal`, `Nowrap`, `Pre`, and `PreWrap`. Block margins support negative lengths, horizontal `"Auto"` centering, and adjacent sibling vertical collapse. Parent/child margin collapse is not implemented. Layout measurements are cached and geometry updates run outside React; resizing does not render every component again. See [the layout limits](docs/compatibility.md) and [the browser comparison](docs/visual-validation.md).
+`LineHeight = 1.5` is a font-size multiplier; `LineHeight = "24px"` is an absolute line height. `WhiteSpace` accepts `Normal`, `Nowrap`, `Pre`, and `PreWrap`. Block margins support horizontal `"Auto"` centering, adjacent sibling collapse and final-child bottom collapse in auto-height blocks; complete CSS margin collapsing remains unfinished. Grid supports equal columns/spans, and flex supports measured intrinsic text, growth/shrinkage and baselines. Layout measurements are cached and geometry updates run outside React. See [the layout limits](docs/compatibility.md) and [the browser comparison](docs/visual-validation.md).
 
 ### Markup and table content
 
@@ -205,6 +205,7 @@ print(require(game.ReplicatedStorage.Tests.Stories)())
 print(require(game.ReplicatedStorage.Tests.Layout).Verify())
 print(require(game.ReplicatedStorage.Tests.Markup).Verify())
 print(require(game.ReplicatedStorage.Tests.Document)())
+print(require(game.ReplicatedStorage.Tests.Responsive)())
 ```
 
 The tests clean up their targets; layout tests use temporary StarterGuis so the engine can compute geometry. Reopen the place before normal Play testing so the mocked scheduler does not affect the demo. Development validation mounts all 62 tags, 66 stories (including **HTML Components → Div → Layout**, **HTML Components → Content**, and **HTML Components → Documents → Document**), and the gallery. `StyleUpdates` verifies actual render invocations and committed updates, accounting for development Strict Mode's double invocation. The shared browser/Studio fixtures cover the original nine scenes, nested inline layout, and markup/table/React equivalence at two widths. See [the screenshot comparison workflow and measured limits](docs/visual-validation.md).

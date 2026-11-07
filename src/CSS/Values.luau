@@ -63,6 +63,10 @@ function Values.split(value: string, separator: string): { string }
 end
 
 function Values.pixels(value: string): number?
+	local rem = tonumber(value:match("^([%+%-]?[%d%.]+)rem$"))
+	if rem then
+		return rem * 16
+	end
 	local number = tonumber(value:match("^([%+%-]?[%d%.]+)px$") or value)
 	if number and number == number and math.abs(number) < math.huge then
 		return number
@@ -173,7 +177,9 @@ function Values.fontFamily(value: string): Types.FontFamily?
 	end
 	for _, family in families do
 		local lower = family:lower()
-		if lower == "sans-serif" then
+		if lower == "system-ui" or lower == "ui-sans-serif" then
+			return "System"
+		elseif lower == "sans-serif" then
 			return "SansSerif"
 		elseif lower == "serif" then
 			return "Serif"
@@ -196,10 +202,11 @@ function Values.shadow(value: string): Shadow?
 	if inset then
 		table.remove(tokens, 1)
 	end
-	if #tokens < 4 or #tokens > 5 then
+	if #tokens < 3 or #tokens > 5 then
 		return nil
 	end
-	local x, y, blur = Values.pixels(tokens[1]), Values.pixels(tokens[2]), Values.pixels(tokens[3])
+	local x, y = Values.pixels(tokens[1]), Values.pixels(tokens[2])
+	local blur = if #tokens >= 4 then Values.pixels(tokens[3]) else 0
 	local spread = if #tokens == 5 then Values.pixels(tokens[4]) else 0
 	local color, transparency = Values.color(tokens[#tokens])
 	if not x or not y or not blur or blur < 0 or not spread or not color then
@@ -213,6 +220,21 @@ function Values.shadow(value: string): Shadow?
 		Transparency = transparency,
 		Inset = inset,
 	}
+end
+
+function Values.shadows(value: string): { Shadow }?
+	if value == "none" then
+		return {}
+	end
+	local result: { Shadow } = {}
+	for _, layer in Values.split(value, ",") do
+		local shadow = Values.shadow(layer)
+		if not shadow or #result >= 16 then
+			return nil
+		end
+		table.insert(result, shadow)
+	end
+	return if #result > 0 then result else nil
 end
 
 -- Style is a closed, validated record. This is the sole dynamic field-copy boundary.

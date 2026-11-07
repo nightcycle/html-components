@@ -2,7 +2,8 @@
 -- Packages
 -- Modules
 -- Types
-export type Sample = { Name: string, HTML: string, Stylesheets: { [string]: string } }
+export type Asset = { Width: number, Height: number, Data: string }
+export type Sample = { Name: string, HTML: string, Stylesheets: { [string]: string }, Assets: { [string]: Asset }? }
 -- Constants
 local EXAMPLE: Sample = {
 	Name = "Example document",
