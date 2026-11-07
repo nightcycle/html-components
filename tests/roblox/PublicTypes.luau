@@ -135,4 +135,7 @@ return function()
 	HTML.Content(content)
 	local parsed: HTML.MarkupResult = HTML.Markup.parse("<strong>Text</strong>")
 	assert(parsed.Success)
+	local document: HTML.DocumentResult = HTML.Document.parse("<!doctype html><title>Document</title><p>Text")
+	local styles: { HTML.DocumentStyleSource } = HTML.Document.stylesheets(document)
+	assert(#styles == 0)
 end

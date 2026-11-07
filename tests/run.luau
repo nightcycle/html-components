@@ -54,6 +54,41 @@ check(
 )
 check(#CSS.parse("p { color:red").Diagnostics == 1, "Unclosed rule")
 check(CSS.parseSelector("p >") == nil and CSS.parseSelector("[href]") == nil, "Invalid selectors")
+for _, case in
+	{
+		{ [[.hover\:text-red:hover]], "hover:text-red" },
+		{ [[.w-1\/2]], "w-1/2" },
+		{ [[.p-2\.5]], "p-2.5" },
+		{ [[.\32 xl\:wide]], "2xl:wide" },
+		{ [[.\000032xl\:wide]], "2xl:wide" },
+		{ [[.a\,b]], "a,b" },
+		{ [[.a\>b]], "a>b" },
+		{ [[.a\ b]], "a b" },
+		{ [[.a\ ]], "a " },
+		{ [[.a\\b]], [[a\b]] },
+		{ [[.caf\e9 ]], "café" },
+	}
+do
+	local escaped = CSS.parse(case[1] .. " { color:red }")
+	check(#escaped.Diagnostics == 0 and #escaped.Rules == 1, `Escaped selector compiles: {case[1]}`)
+	local target = { Tag = "Div", Classes = { case[2] }, Hover = true }
+	check(CSS.resolve({ escaped }, target, {}, {}, {}).Color == "red", `Decoded class matches: {case[2]}`)
+end
+check(CSS.parseSelector([[.\0]]).Parts[1].Classes[1] == utf8.char(0xFFFD), "Invalid codepoint replaced")
+check(CSS.parseSelector(".bad\\") == nil and CSS.parseSelector(".bad\\\nname") == nil, "Invalid escapes rejected")
+local escapedMap = CSS.fromMap({ ["Button.hover\\:red:Hover"] = { Color = "red" } })
+check(
+	#escapedMap.Diagnostics == 0
+		and CSS.resolve({ escapedMap }, { Tag = "Button", Classes = { "hover:red" }, Hover = true }, {}, {}, {}).Color
+			== "red",
+	"Escapes preserve PascalCase table selector contract"
+)
+check(#CSS.parse([[.a\,b, .other { color:red }]]).Rules == 2, "Escaped comma does not split a selector group")
+local escapedChild = CSS.parseSelector([[.a\>b > .w-1\/2]])
+check(
+	CSS.matches(escapedChild, { Tag = "Div", Classes = { "w-1/2" } }, { { Tag = "Div", Classes = { "a>b" } } }),
+	"Escaped combinator does not alter child matching"
+)
 local selector = CSS.parseSelector("main > section p")
 check(
 	CSS.matches(
@@ -65,6 +100,41 @@ check(
 )
 local color, transparency = Values.color("#abcd")
 check(color == roblox.Color3.fromRGB(170, 187, 204) and math.abs(transparency - (1 - 221 / 255)) < 0.001, "Hex alpha")
+for _, input in
+	{ "rgb(255 0 0 / 50%)", "rgba(100% 0% 0% / .5)", "rgb(255,0,0,50%)", "rgb(100%,0%,0%,.5)", "rgb(2.55e2 0 0/.5)" }
+do
+	local rgb, alpha = Values.color(input)
+	check(rgb == roblox.Color3.fromRGB(255, 0, 0) and alpha == 0.5, `RGB syntax: {input}`)
+end
+check(Values.color("rgb(100% 0 0)") == roblox.Color3.fromRGB(255, 0, 0), "Modern RGB allows mixed channels")
+check(Values.color("rgb(300 -10 0)") == roblox.Color3.fromRGB(255, 0, 0), "RGB channels clamp")
+for _, input in
+	{
+		"rgb(255, 0 0)",
+		"rgb(255,0,0 / .5)",
+		"rgb(255 0 0 /)",
+		"rgb(255 0 0 / .5 / .5)",
+		"rgb(100%,0,0)",
+		"rgb(0xFF 0 0)",
+		"rgb(1e999 0 0)",
+		"rgb(255 0)",
+		"rgb(1. 0 0)",
+		"rgb(255 0 0 / var(--alpha))",
+	}
+do
+	check(Values.color(input) == nil, `Invalid or unsupported RGB rejected: {input}`)
+end
+check(
+	resolve([[p { font-family: "Unavailable Font", Arial, sans-serif; color:rgb(255 0 0 / .5) }]]).FontFamily
+		== "SansSerif",
+	"Supported generic font fallback and modern color compile"
+)
+check(resolve([[p { font-family: Georgia, SERIF }]]).FontFamily == "Serif", "Generic family is case insensitive")
+check(resolve([[p { font-family: "serif", monospace }]]).FontFamily == "Monospace", "Quoted family is a name")
+check(
+	#CSS.parse([[p { font-family:"serif" } p { font-family:Arial } p { font-family:Arial,,serif }]]).Diagnostics == 3,
+	"Missing fallback and empty family diagnose"
+)
 check(Values.length("50%") == roblox.UDim.new(0.5, 0) and Values.length("2em") == nil, "Length conversion")
 check(Values.shadow("0px 2px -1px black") == nil, "Negative blur rejected")
 check(Values.shadow("inset 0px 2px 4px 1px #0008").Inset == true, "Inset shadow")

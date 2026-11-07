@@ -16,7 +16,7 @@ local PreviewStage = require(storage.Stories.PreviewStage)
 -- Global Variables
 -- Private Functions
 -- Class
-return UILabs.CreateReactStory({ React = React, ReactRoblox = ReactRoblox, controls = {} }, function()
+return UILabs.CreateReactStory({ react = React, reactRoblox = ReactRoblox, controls = {} }, function()
 	return React.createElement(
 		PreviewStage,
 		{ Size = Vector2.new(772, 484) },

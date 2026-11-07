@@ -97,6 +97,35 @@ return function(): string
 			expect(name, 0)
 		end
 		assert(target:FindFirstChild("Match", true) == match, "Updates must preserve host identity")
+		local reports: { { HTML.Diagnostic } } = {}
+		local function receive(diagnostics: { HTML.Diagnostic })
+			table.insert(reports, diagnostics)
+		end
+		local properties: HTML.StyleProviderProperties = {
+			StyleSheet = HTML.CSS.parse("p { unknown-property: 1; color:red }"),
+			CSS = { ["Button:Unsupported"] = { Color = "blue" } },
+			OnDiagnostics = receive,
+		}
+		local function renderDiagnostics(props: HTML.StyleProviderProperties)
+			ReactRoblox.act(function()
+				root:render(e(HTML.StyleProvider, props))
+			end)
+		end
+		renderDiagnostics(properties)
+		assert(#reports == 1 and #reports[1] == 2, "Callback receives both map and stylesheet diagnostics")
+		assert(reports[1][2].Source == "unknown-property: 1", "Callback preserves full diagnostic source")
+		renderDiagnostics(properties)
+		assert(#reports == 1, "Unchanged inputs do not repeat diagnostic delivery")
+		renderDiagnostics({ OnDiagnostics = receive })
+		assert(#reports == 2 and #reports[2] == 0, "Clearing styles clears diagnostics")
+		local replacementCalls = 0
+		renderDiagnostics({
+			OnDiagnostics = function(diagnostics: { HTML.Diagnostic })
+				replacementCalls += 1
+				assert(#diagnostics == 0, "Replacement callback receives current diagnostics")
+			end,
+		})
+		assert(replacementCalls == 1, "Callback replacement is observed")
 	end)
 	ReactRoblox.act(function()
 		root:unmount()

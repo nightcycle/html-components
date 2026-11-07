@@ -1,5 +1,6 @@
 --!strict
 local Types = require(script.Parent.Parent.Types)
+local escape = require(script.Parent.Escape)
 local Values = {}
 
 function Values.pascal(value: string): string
@@ -8,7 +9,25 @@ function Values.pascal(value: string): string
 end
 
 function Values.trim(value: string): string
-	return (value:gsub("^%s+", ""):gsub("%s+$", ""))
+	local start = value:find("%S")
+	if not start then
+		return ""
+	end
+	local index, last = start, start
+	while index <= #value do
+		local char = value:sub(index, index)
+		if char == "\\" then
+			local _, after = escape(value, index)
+			last = after - 1
+			index = after
+		else
+			if not char:match("%s") then
+				last = index
+			end
+			index += 1
+		end
+	end
+	return value:sub(start, last)
 end
 
 -- Split only outside quoted strings and parentheses (rgb(), shadow colors, etc.).
@@ -16,10 +35,15 @@ function Values.split(value: string, separator: string): { string }
 	local out: { string } = {}
 	local start, depth = 1, 0
 	local quote: string? = nil
-	for index = 1, #value do
+	local index = 1
+	while index <= #value do
 		local char = value:sub(index, index)
-		if quote then
-			if char == quote and value:sub(index - 1, index - 1) ~= "\\" then
+		if char == "\\" then
+			local _, after = escape(value, index)
+			index = after
+			continue
+		elseif quote then
+			if char == quote then
 				quote = nil
 			end
 		elseif char == '"' or char == "'" then
@@ -32,6 +56,7 @@ function Values.split(value: string, separator: string): { string }
 			table.insert(out, Values.trim(value:sub(start, index - 1)))
 			start = index + 1
 		end
+		index += 1
 	end
 	table.insert(out, Values.trim(value:sub(start)))
 	return out
@@ -74,6 +99,24 @@ local named: { [string]: string } = {
 	transparent = "00000000",
 }
 
+local function channel(source: string, scale: number): (number?, boolean)
+	local value = Values.trim(source)
+	local percent = value:sub(-1) == "%"
+	if percent then
+		value = value:sub(1, -2)
+	end
+	local unsigned = value:gsub("^[%+%-]", "")
+	local mantissa = unsigned:match("^([%d%.]+)[eE][%+%-]?%d+$") or unsigned
+	if not mantissa:match("^%d+$") and not mantissa:match("^%d*%.%d+$") then
+		return nil, percent
+	end
+	local number = tonumber(value)
+	if not number or number ~= number or math.abs(number) == math.huge then
+		return nil, percent
+	end
+	return math.clamp(number / (if percent then 100 else scale), 0, 1), percent
+end
+
 function Values.color(value: string): (Color3?, number)
 	local lower = string.lower(Values.trim(value))
 	local hex = named[lower] or lower:match("^#(%x+)$")
@@ -89,14 +132,56 @@ function Values.color(value: string): (Color3?, number)
 	end
 	local body = lower:match("^rgba?%((.*)%)$")
 	if body then
-		local parts = Values.split(body, ",")
-		local r, g, b, a = tonumber(parts[1]), tonumber(parts[2]), tonumber(parts[3]), tonumber(parts[4] or "1")
-		if (#parts == 3 or #parts == 4) and r and g and b and a then
-			return Color3.fromRGB(math.clamp(r, 0, 255), math.clamp(g, 0, 255), math.clamp(b, 0, 255)),
-				1 - math.clamp(a, 0, 1)
+		local legacy = body:find(",", 1, true) ~= nil
+		local parts: { string } = {}
+		local alpha = "1"
+		if legacy then
+			parts = Values.split(body, ",")
+			if #parts == 4 then
+				alpha = table.remove(parts) :: string
+			end
+		else
+			local sections = Values.split(body, "/")
+			if #sections > 2 then
+				return nil, 0
+			end
+			alpha = sections[2] or "1"
+			for token in sections[1]:gmatch("%S+") do
+				table.insert(parts, token)
+			end
+		end
+		if #parts ~= 3 then
+			return nil, 0
+		end
+		local r, rp = channel(parts[1], 255)
+		local g, gp = channel(parts[2], 255)
+		local b, bp = channel(parts[3], 255)
+		local a = channel(alpha, 1)
+		if r and g and b and a and (not legacy or (rp == gp and gp == bp)) then
+			return Color3.new(r, g, b), 1 - a
 		end
 	end
 	return nil, 0
+end
+
+function Values.fontFamily(value: string): Types.FontFamily?
+	local families = Values.split(value, ",")
+	for _, family in families do
+		if family == "" then
+			return nil
+		end
+	end
+	for _, family in families do
+		local lower = family:lower()
+		if lower == "sans-serif" then
+			return "SansSerif"
+		elseif lower == "serif" then
+			return "Serif"
+		elseif lower == "monospace" then
+			return "Monospace"
+		end
+	end
+	return nil
 end
 
 export type Shadow = Types.Shadow

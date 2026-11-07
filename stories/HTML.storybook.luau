@@ -9,8 +9,10 @@ local UILabs = require(script.Parent.Parent.DevPackages.UILabs)
 -- References
 -- Private Functions
 -- Class
+local roots = script.Parent.Parent.Packages.HTMLComponents.React.Component:GetChildren()
+table.insert(roots, script.Parent.Documents)
 return {
 	name = "HTML Components",
-	storyRoots = script.Parent.Parent.Packages.HTMLComponents.React.Component:GetChildren(),
+	storyRoots = roots,
 	groupRoots = true,
 } :: UILabs.Storybook

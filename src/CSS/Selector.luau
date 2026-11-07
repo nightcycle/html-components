@@ -2,12 +2,57 @@
 local Tag = require(script.Parent.Parent.Tag)
 local Types = require(script.Parent.Parent.Types)
 local Values = require(script.Parent.Values)
+local escape = require(script.Parent.Escape)
 local Selector = {}
+
+local function identifier(source: string, start: number): (string?, number)
+	local pieces: { string } = {}
+	local index = start
+	while index <= #source do
+		local char = source:sub(index, index)
+		if char == "\\" then
+			local decoded, after = escape(source, index)
+			if not decoded then
+				return nil, after
+			end
+			table.insert(pieces, decoded)
+			index = after
+		elseif char:match("[%w_%-]") or string.byte(char) >= 128 then
+			table.insert(pieces, char)
+			index += 1
+		else
+			break
+		end
+	end
+	return if #pieces > 0 then table.concat(pieces) else nil, index
+end
 
 function Selector.parse(source: string, pascalCase: boolean?): Types.Selector?
 	local tokens: { string } = {}
-	for token in source:gsub(">", " > "):gmatch("%S+") do
-		table.insert(tokens, token)
+	local start, index = 1, 1
+	while index <= #source do
+		local char = source:sub(index, index)
+		if char == "\\" then
+			local decoded, after = escape(source, index)
+			if not decoded then
+				return nil
+			end
+			index = after
+		elseif char:match("%s") or char == ">" then
+			if index > start then
+				table.insert(tokens, source:sub(start, index - 1))
+			end
+			if char == ">" then
+				table.insert(tokens, char)
+			end
+			index += 1
+			start = index
+		else
+			index += 1
+		end
+	end
+	if start <= #source then
+		table.insert(tokens, source:sub(start))
 	end
 	local parts: { Types.SelectorPart } = {}
 	local specificity: Types.Specificity = { Ids = 0, Classes = 0, Tags = 0 }
@@ -20,19 +65,31 @@ function Selector.parse(source: string, pascalCase: boolean?): Types.Selector?
 			relation = "Child"
 		else
 			local part: Types.SelectorPart = { Classes = {}, States = {}, Relation = relation }
-			local rest = token
-			local tag = rest:match("^([%a][%w%-]*)") or rest:match("^(%*)")
+			local cursor = 1
+			local tag: string? = nil
+			local first = token:sub(1, 1)
+			if first == "*" then
+				tag, cursor = "*", 2
+			elseif first:match("[%a_%-]") or first == "\\" or string.byte(first) >= 128 then
+				tag, cursor = identifier(token, cursor)
+				if not tag then
+					return nil
+				end
+			end
 			if tag then
 				part.Tag = if tag == "*" then nil else Tag(tag)
 				if tag ~= "*" and (not part.Tag or (pascalCase and tag ~= part.Tag)) then
 					return nil
 				end
 				specificity.Tags += if tag == "*" then 0 else 1
-				rest = rest:sub(#tag + 1)
 			end
-			while rest ~= "" do
-				local prefix, name = rest:match("^([%.#:])([%w_%-]+)")
-				if not prefix or not name then
+			while cursor <= #token do
+				local prefix = token:sub(cursor, cursor)
+				if prefix ~= "." and prefix ~= "#" and prefix ~= ":" then
+					return nil
+				end
+				local name, after = identifier(token, cursor + 1)
+				if not name then
 					return nil
 				end
 				if prefix == "#" then
@@ -54,7 +111,7 @@ function Selector.parse(source: string, pascalCase: boolean?): Types.Selector?
 					table.insert(part.States, Values.pascal(name) :: Types.SelectorState)
 					specificity.Classes += 1
 				end
-				rest = rest:sub(#name + 2)
+				cursor = after
 			end
 			table.insert(parts, part)
 			relation = "Descendant"

@@ -141,6 +141,37 @@ export type ContentProperties = {
 }
 export type DeclarationResult = { Style: Style, Important: Style, Diagnostics: { Diagnostic } }
 
+export type DocumentElementKind = "Element"
+export type DocumentTextKind = "Text"
+export type DocumentCommentKind = "Comment"
+export type DocumentDoctypeKind = "Doctype"
+export type DocumentNodeKind = DocumentElementKind | DocumentTextKind | DocumentCommentKind | DocumentDoctypeKind
+export type DocumentNamespace = "HTML" | "SVG" | "MathML"
+export type DocumentSeverity = "Warning" | "Error"
+export type DocumentIssue = "Syntax" | "Unsupported" | "Limit"
+export type DocumentAttribute = { Name: string, SourceName: string, Value: string, Location: SourceLocation }
+export type DocumentElement = {
+	Kind: DocumentElementKind,
+	Tag: string,
+	SourceName: string,
+	Namespace: DocumentNamespace,
+	Attributes: { DocumentAttribute },
+	Children: { DocumentNode },
+	Location: SourceLocation?,
+}
+export type DocumentText = { Kind: DocumentTextKind, Text: string, Location: SourceLocation? }
+export type DocumentComment = { Kind: DocumentCommentKind, Text: string, Location: SourceLocation? }
+export type DocumentDoctype = { Kind: DocumentDoctypeKind, Name: string, Location: SourceLocation? }
+export type DocumentNode = DocumentElement | DocumentText | DocumentComment | DocumentDoctype
+export type DocumentDiagnostic = {
+	Severity: DocumentSeverity,
+	Issue: DocumentIssue,
+	Message: string,
+	Location: SourceLocation,
+}
+export type DocumentResult = { Success: boolean, Children: { DocumentNode }, Diagnostics: { DocumentDiagnostic } }
+export type DocumentStyleSource = { Href: string?, Text: string?, Media: string?, Location: SourceLocation? }
+
 export type Common = {
 	Id: string?,
 	ClassName: string?,
@@ -176,6 +207,11 @@ export type MeterProperties =
 	Roblox.FrameProperties
 	& Common
 	& { Value: number?, Min: number?, Max: number?, FillColor: Color3? }
-export type ProviderProperties = { StyleSheet: StyleSheet?, CSS: StyleMap?, Children: React.ReactNode? }
+export type ProviderProperties = {
+	StyleSheet: StyleSheet?,
+	CSS: StyleMap?,
+	Children: React.ReactNode?,
+	OnDiagnostics: (({ Diagnostic }) -> ())?,
+}
 
 return {}

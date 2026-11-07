@@ -2,7 +2,7 @@
 
 62 strictly typed React Luau components that map an explicit HTML/CSS subset to native Roblox UI. Includes contextual CSS, individual corners, native shadows, UI Labs stories, and a searchable development gallery.
 
-Includes an XML-style fragment parser and a typed table input for mixed text. This is a foundation for an HTML importer, with an explicit supported subset rather than HTML5 error recovery or a browser DOM. See [the compatibility contract](docs/compatibility.md) before translating web content.
+Includes an XML-style fragment renderer with typed table input, plus an experimental whole-document HTML reader. The demo's **Documents** view previews imported structure using supported components and lists remaining gaps. See [the compatibility contract](docs/compatibility.md) and [document parsing workflow](docs/html-document.md) before translating web content.
 
 ## Install
 
@@ -128,7 +128,9 @@ Map keys are sorted alphabetically: when two selectors have equal specificity, t
 
 `HTML.CSS.fromMap(css)` compiles a map for the optional `StyleSheet` prop. For importing browser CSS, `HTML.CSS.parse(text)` remains available and preserves textual source order and `!important`; pass its returned table through `StyleSheet`. The `CSS` provider prop accepts a selector map, not a string.
 
-The cascade is inherited typography → tag defaults → matching normal rules (specificity, then source order) → inline `CSS` → matching `!important` declarations. Native props are the final Roblox escape hatch. Unsupported CSS is omitted with diagnostics; providers also log these diagnostics once when their stylesheet inputs change.
+The cascade is inherited typography → tag defaults → matching normal rules (specificity, then source order) → inline `CSS` → matching `!important` declarations. Native props are the final Roblox escape hatch. Unsupported CSS is omitted with diagnostics. `StyleProvider.OnDiagnostics` receives the complete `{ HTML.Diagnostic }` array when stylesheet inputs change, including an empty array when issues clear. Without a callback, the provider prints one summary with at most three short examples. `StyleSheet.Diagnostics` always retains every entry. The Documents demo displays the full list in its Diagnostics tab instead of printing it to Output.
+
+CSS text supports escaped class/ID names, comma-separated font fallback lists containing a supported generic family (`sans-serif`, `serif`, or `monospace`), and both comma and space/slash RGB colors, including percentages. Generic families map to the package's Roblox fonts; named web fonts are skipped. CSS variables, media queries, and unsupported selectors still produce diagnostics.
 
 Style contexts hold stable subscription scopes. Stylesheet updates compare each element's resolved style field by field and schedule React updates only for changed results. Changing `.notice` leaves unrelated elements out of React rendering; inherited typography still reaches descendants that have not overridden it. Ancestor state and class changes still affect descendant selectors. A local background or padding change does not propagate to descendants.
 
@@ -188,7 +190,7 @@ Each component exports `Properties` and an explicit component function. Shared r
 
 `scripts/tags.luau` owns the tag catalog and default styles. Run `lune run scripts/generate` after editing it; commit the component folders, header, catalog, stories, and Wally directory list together. Generated source uses the same StyLua settings as `open-shl`; the check command detects drift.
 
-Local checks cover CSS parsing/cascade/selector behavior, selective style notifications (including 500 subscribers), inline flow, markup/table validation, generated story coverage, all 64 component property exports through the package header, formatting, strict runtime **and tooling** analysis, and 20 fixtures that must fail type checking. Build checks compile the runtime and demo and verify Wally contents. GitHub CI performs these checks; it does not run Studio.
+Local checks cover CSS parsing/cascade/selector behavior, selective style notifications (including 500 subscribers), inline flow, markup/table validation, document parsing against 26 owned Chromium reference fixtures, generated story coverage, all 64 component property exports through the package header, formatting, strict runtime **and tooling** analysis, and 20 fixtures that must fail type checking. Build checks compile the runtime and demo, evaluate all 66 story factories with the installed UI Labs constructor to validate their returned metadata, and verify Wally contents. GitHub CI performs these checks; it does not run Studio or require third-party HTML downloads.
 
 The editor uses the Luau LSP extension's automatically updated Roblox definitions. The pinned `.tools/globalTypes-*.d.luau` file is used only by the command-line checks; loading it again through `luau-lsp.types.definitionFiles` creates conflicting enum types (`@roblox` versus `@roblox0`). After changing these settings, restart the Luau language server if old diagnostics remain.
 
@@ -202,9 +204,10 @@ print(require(game.ReplicatedStorage.Tests.StyleUpdates)())
 print(require(game.ReplicatedStorage.Tests.Stories)())
 print(require(game.ReplicatedStorage.Tests.Layout).Verify())
 print(require(game.ReplicatedStorage.Tests.Markup).Verify())
+print(require(game.ReplicatedStorage.Tests.Document)())
 ```
 
-The tests clean up their targets; layout tests use temporary StarterGuis so the engine can compute geometry. Reopen the place before normal Play testing so the mocked scheduler does not affect the demo. Development validation mounts all 62 tags, 65 stories (including **HTML Components → Div → Layout** and **HTML Components → Content**), and the gallery. `StyleUpdates` verifies actual render invocations and committed updates, accounting for development Strict Mode's double invocation. The shared browser/Studio fixtures cover the original nine scenes, nested inline layout, and markup/table/React equivalence at two widths. See [the screenshot comparison workflow and measured limits](docs/visual-validation.md).
+The tests clean up their targets; layout tests use temporary StarterGuis so the engine can compute geometry. Reopen the place before normal Play testing so the mocked scheduler does not affect the demo. Development validation mounts all 62 tags, 66 stories (including **HTML Components → Div → Layout**, **HTML Components → Content**, and **HTML Components → Documents → Document**), and the gallery. `StyleUpdates` verifies actual render invocations and committed updates, accounting for development Strict Mode's double invocation. The shared browser/Studio fixtures cover the original nine scenes, nested inline layout, and markup/table/React equivalence at two widths. See [the screenshot comparison workflow and measured limits](docs/visual-validation.md).
 
 ## Releases
 

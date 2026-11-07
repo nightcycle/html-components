@@ -61,6 +61,15 @@ for _, property in properties do
 end
 
 local function declaration(name: string, value: string): Types.Style?
+	if name == "font-family" then
+		local family: Types.FontFamily? = Values.fontFamily(value)
+		if not family then
+			return nil
+		end
+		local style: Types.Style = {}
+		style.FontFamily = family
+		return style
+	end
 	if name == "text-decoration" then
 		local underline, strike = false, false
 		if value == "none" then
@@ -191,7 +200,7 @@ local function parseDeclarations(source: string, diagnostics: { Types.Diagnostic
 		if style then
 			Values.merge(if isImportant then important else normal, style)
 		else
-			table.insert(diagnostics, { Message = `Unsupported property or value: {name}`, Source = text })
+			table.insert(diagnostics, { Message = "Unsupported property or value", Source = text })
 		end
 	end
 	return normal, important

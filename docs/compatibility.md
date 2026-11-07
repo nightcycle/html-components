@@ -26,7 +26,7 @@ Other tags are absent from `HTML.Tags`. In particular: document metadata/scripts
 
 ## CSS
 
-Selectors: type, `*`, `.class`, `#id`, compound selectors, comma-separated selectors, descendant and direct-child (`>`) relationships; `:hover`, `:active`, `:focus`, `:disabled`. Ancestry is the HTML component context tree, independent of intervening React providers. Native-only Roblox components do not add CSS selector ancestors.
+Selectors: type, `*`, `.class`, `#id`, compound selectors, comma-separated selectors, descendant and direct-child (`>`) relationships; `:hover`, `:active`, `:focus`, `:disabled`. CSS escapes are decoded in identifiers, including utility classes such as `.hover\:active`, `.w-1\/2`, and `.p-2\.5`. Ancestry is the HTML component context tree, independent of intervening React providers. Native-only Roblox components do not add CSS selector ancestors.
 
 | Properties | Accepted values / implementation |
 | --- | --- |
@@ -42,9 +42,9 @@ Selectors: type, `*`, `.class`, `#id`, compound selectors, comma-separated selec
 | `justify-content` | `flex-start`, `center`, `flex-end`, `space-between`, `space-around`, `space-evenly`; native list/flex alignment. |
 | `align-items` | `flex-start`, `center`, `flex-end`; native cross-axis alignment. |
 | `order`, `z-index` | Integers; LayoutOrder and ZIndex. |
-| `background-color`, `color`, `border-color` | `#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`, comma-form `rgb()`/`rgba()`, plus black/white/red/green/blue/gray/grey/yellow/orange/purple/transparent. |
+| `background-color`, `color`, `border-color` | `#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`, comma-form and space/slash `rgb()`/`rgba()` with numeric or percentage channels/alpha, plus black/white/red/green/blue/gray/grey/yellow/orange/purple/transparent. `var()`, `calc()`, and `none` channels are unsupported. |
 | `font-size` | Nonnegative CSS em-size pixels, converted to Roblox TextSize line-height units using the bundled font metrics and rounded to integer pixels. Explicit native TextSize overrides this conversion. |
-| `font-family` | `sans-serif`, `serif`, `monospace`; SourceSansPro, Merriweather, RobotoMono. |
+| `font-family` | Uses the first supported generic in a comma-separated fallback list: `sans-serif`, `serif`, `monospace` map to SourceSansPro, Merriweather, RobotoMono. Named fonts are skipped; a list with no supported generic produces a diagnostic. Quoted family names are not generics. |
 | `font-weight`, `font-style` | `normal`/`bold`, `normal`/`italic`. |
 | `text-align`, `text-decoration` | `left`/`center`/`right`; `none`/`underline`/`line-through`, including `underline line-through`. Table form uses `UnderlineLineThrough` for both. Decoration escapes text before adding Roblox RichText markup. |
 | `white-space` | `normal`, `pre`, `pre-wrap`, `nowrap`. Flowing text collapses ASCII spaces/tabs/newlines across element boundaries or preserves them in pre modes. Tabs currently use four spaces, not CSS tab stops. |
@@ -99,4 +99,6 @@ This is not an HTML5 document parser or a parser for Roblox's entire RichText la
 
 ## Future HTML importer
 
-The typed node tree and XML-style parser provide the first import path for mixed text. A broader importer must add HTML5 tokenization/error recovery, the remaining component tags/attributes, document styles, and explicit resource/event handling. The next layout priorities are content-box sizing, min-content sizing, flex grow/shrink/basis, browser default styles and broader line-breaking rules. Unsupported browser behavior must remain visible through diagnostics.
+The typed node tree and XML-style parser provide the rendering path for mixed text. `HTML.Document.parse` now provides a separate experimental whole-document tree, including unknown tags/attributes, head metadata, SVG/MathML namespaces, character references, and selected HTML recovery rules. See [its API, tested subset, and browser comparison workflow](html-document.md). It is not yet connected to `Content` and is not a complete HTML5 tree builder.
+
+The demo now includes a development adapter and an inspector for previewing supported document tags/styles. Unsupported graphics use placeholders; unknown tags use diagnosed generic containers. This adapter is not included in the Wally runtime. The next importer work is a production document renderer, resource/event mappings, and broader document styles. Layout priorities remain content-box sizing, min-content sizing, flex grow/shrink/basis, browser default styles and broader line-breaking rules. Unsupported browser behavior must remain visible through diagnostics.

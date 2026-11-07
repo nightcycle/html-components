@@ -1,9 +1,10 @@
 --!strict
 -- Export a detached test tree; no HTTP, uploads, or changes to the open place.
 local fs = require("@lune/fs")
+local process = require("@lune/process")
 local roblox = require("@lune/roblox")
 local serde = require("@lune/serde")
-local place = roblox.deserializePlace(fs.readFile("build/html-components-demo.rbxl"))
+local place = roblox.deserializePlace(fs.readFile(process.args[1] or "build/html-components-demo.rbxl"))
 type Record = { Id: number, Parent: number, Name: string, Source: string? }
 local records: { Record } = {}
 local function visit(instance: roblox.Instance, parent: number, depth: number)
@@ -22,7 +23,20 @@ local function visit(instance: roblox.Instance, parent: number, depth: number)
 	end
 end
 local storage = assert(place:FindFirstChild("ReplicatedStorage"))
-for _, name in { "Packages", "DevPackages", "Stories", "Demo", "Tests" } do
+for _, name in
+	{
+		"Packages",
+		"DevPackages",
+		"Stories",
+		"Demo",
+		"DocumentDemo",
+		"LocalDocumentFixture",
+		"Tests",
+		"VisualFixtures",
+		"FlowFixtures",
+		"MarkupFixtures",
+	}
+do
 	visit(assert(storage:FindFirstChild(name)), 0, 1)
 end
 fs.writeDir(".tools/studio")

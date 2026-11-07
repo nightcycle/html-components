@@ -1,4 +1,5 @@
 --!strict
+local checkStoryContracts = require("./shared/check-story-contracts")
 local fs = require("@lune/fs")
 local getMetadata = require("./shared/package-metadata")
 local luau = require("@lune/luau")
@@ -16,6 +17,13 @@ local packageRoot = roots[1]
 local moduleCount = 0
 local function compile(instance: roblox.Instance)
 	if instance:IsA("LuaSourceContainer") then
+		-- Instance properties win over child lookup, even when the sourcemap accepts the require.
+		for _, child in instance:GetChildren() do
+			assert(
+				((instance :: unknown) :: { [string]: unknown })[child.Name] == (child :: unknown),
+				`Child collides with a Roblox property: {child:GetFullName()}`
+			)
+		end
 		luau.compile(((instance :: unknown) :: { Source: string }).Source)
 		moduleCount += 1
 	end
@@ -31,8 +39,15 @@ assert(
 )
 local place = roblox.deserializePlace(fs.readFile("build/html-components-demo.rbxl"))
 local storage = assert(place:FindFirstChild("ReplicatedStorage"))
+local storyCount = checkStoryContracts(storage)
 assert(assert(assert(storage:FindFirstChild("Packages")):FindFirstChild("HTMLComponents")):IsA("ModuleScript"))
 assert(assert(assert(storage:FindFirstChild("Stories")):FindFirstChild("HTML.storybook")):IsA("ModuleScript"))
+assert(storage:FindFirstChild("DocumentDemo"), "Missing document demo")
+local fixture = assert(storage:FindFirstChild("LocalDocumentFixture"))
+assert(
+	((fixture :: unknown) :: { Source: string }).Source:find("Sample = nil", 1, true),
+	"Local fixture leaked into distributable demo"
+)
 for _, instance in place:GetDescendants() do
 	compile(instance)
 end
@@ -67,6 +82,12 @@ for _, path in
 		"src/Markup/init.luau",
 		"src/Markup/Entities.luau",
 		"src/Markup/Tags.luau",
+		"src/Document/init.luau",
+		"src/Document/Names.luau",
+		"src/Document/SourceText.luau",
+		"src/Document/Tokenizer.luau",
+		"src/Document/Entities.luau",
+		"src/Document/NamedEntities.luau",
 		"src/React/Component/Content/init.luau",
 		"src/React/Render/ContentText.luau",
 		"src/React/Render/Decoration.luau",
@@ -74,4 +95,4 @@ for _, path in
 do
 	assert(paths:find(path, 1, true), `Missing packaged runtime module {path}`)
 end
-print(`Built and compiled {moduleCount} scripts across package and demo; Wally contents verified.`)
+print(`Built and compiled {moduleCount} scripts; {storyCount} UI Labs story contracts and Wally contents verified.`)

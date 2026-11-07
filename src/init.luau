@@ -4,6 +4,7 @@
 -- Modules
 local CSS = require(script.CSS)
 local Catalog = require(script.Catalog)
+local Document = require(script.Document)
 local Markup = require(script.Markup)
 -- Components
 local A = require(script.React.Component.A)
@@ -112,6 +113,23 @@ export type SourceLocation = Types.SourceLocation
 export type MarkupDiagnostic = Types.MarkupDiagnostic
 export type MarkupResult = Types.MarkupResult
 export type DeclarationResult = Types.DeclarationResult
+export type DocumentElementKind = Types.DocumentElementKind
+export type DocumentTextKind = Types.DocumentTextKind
+export type DocumentCommentKind = Types.DocumentCommentKind
+export type DocumentDoctypeKind = Types.DocumentDoctypeKind
+export type DocumentNodeKind = Types.DocumentNodeKind
+export type DocumentNamespace = Types.DocumentNamespace
+export type DocumentSeverity = Types.DocumentSeverity
+export type DocumentIssue = Types.DocumentIssue
+export type DocumentAttribute = Types.DocumentAttribute
+export type DocumentElement = Types.DocumentElement
+export type DocumentText = Types.DocumentText
+export type DocumentComment = Types.DocumentComment
+export type DocumentDoctype = Types.DocumentDoctype
+export type DocumentNode = Types.DocumentNode
+export type DocumentDiagnostic = Types.DocumentDiagnostic
+export type DocumentResult = Types.DocumentResult
+export type DocumentStyleSource = Types.DocumentStyleSource
 export type Common = Types.Common
 export type ContainerProperties = Types.ContainerProperties
 export type TextProperties = Types.TextProperties
@@ -191,6 +209,7 @@ return table.freeze({
 	StyleProvider = StyleProvider,
 	Catalog = Catalog,
 	Markup = Markup,
+	Document = Document,
 	Content = Content,
 	Html = Html,
 	Body = Body,

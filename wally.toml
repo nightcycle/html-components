@@ -11,6 +11,7 @@ include = [
   "src/CSS", "src/CSS/**",
   "src/Layout", "src/Layout/**",
   "src/Markup", "src/Markup/**",
+  "src/Document", "src/Document/**",
   "src/React", "src/React/Context", "src/React/Context/**",
   "src/React/Hook", "src/React/Hook/**", "src/React/Render", "src/React/Render/**",
   "src/React/Component", "src/React/Component/*/init.luau",

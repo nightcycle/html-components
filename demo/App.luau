@@ -6,6 +6,7 @@ local React = require(script.Parent.Packages.React)
 local RobloxComponents = require(script.Parent.Packages.RobloxComponents)
 -- Modules
 -- Components
+local DocumentDemo = require(script.Parent.DocumentDemo)
 local Preview = require(script.Parent.Stories.Preview)
 -- Hooks
 -- Contexts
@@ -20,6 +21,7 @@ return function()
 	local query, setQuery = React.useState("")
 	local category, setCategory = React.useState("all")
 	local dark, setDark = React.useState(false)
+	local documents, setDocuments = React.useState(false)
 	local cards: { [string]: React.ReactNode } = {}
 	local visible = 0
 	for index, entry in HTML.Catalog do
@@ -125,51 +127,67 @@ return function()
 								end,
 							} :: HTML.ButtonProperties
 						),
+						Documents = e(
+							HTML.Button,
+							{
+								Text = if documents then "Component gallery" else "Documents",
+								LayoutOrder = 6,
+								OnActivated = function()
+									setDocuments(not documents)
+								end,
+							} :: HTML.ButtonProperties
+						),
 					}
 				),
-				Main = e(RobloxComponents.Frame({
-					Position = UDim2.fromOffset(220, 0),
-					Size = UDim2.new(1, -220, 1, 0),
-					BackgroundColor3 = Color3.fromRGB(235, 240, 249),
-					BorderSizePixel = 0,
-				}, {}, {
-					Heading = e(
-						HTML.H1,
-						{
-							Text = "Native UI. Familiar tags.",
-							Position = UDim2.fromOffset(24, 24),
-							Size = UDim2.new(1, -48, 0, 44),
-						} :: HTML.TextProperties
-					),
-					Description = e(
-						HTML.P,
-						{
-							Text = `{visible} of {#HTML.Catalog} components · contextual CSS · typed Roblox roots`,
-							Position = UDim2.fromOffset(24, 72),
-							Size = UDim2.new(1, -48, 0, 24),
-						} :: HTML.TextProperties
-					),
-					Search = e(
-						HTML.Input,
-						{
-							Placeholder = "Find a tag…",
-							Value = query,
-							OnInput = setQuery,
-							Position = UDim2.fromOffset(24, 112),
-							Size = UDim2.new(1, -48, 0, 40),
-							CSS = { BorderRadius = 8 },
-						} :: HTML.InputProperties
-					),
-					Gallery = e(RobloxComponents.ScrollingFrame({
-						Position = UDim2.fromOffset(24, 176),
-						Size = UDim2.new(1, -32, 1, -176),
+				Main = if documents
+					then e(RobloxComponents.Frame({
+						Position = UDim2.fromOffset(220, 0),
+						Size = UDim2.new(1, -220, 1, 0),
 						BackgroundTransparency = 1,
+					}, {}, { Document = e(DocumentDemo, {}) }))
+					else e(RobloxComponents.Frame({
+						Position = UDim2.fromOffset(220, 0),
+						Size = UDim2.new(1, -220, 1, 0),
+						BackgroundColor3 = Color3.fromRGB(235, 240, 249),
 						BorderSizePixel = 0,
-						CanvasSize = UDim2.new(),
-						AutomaticCanvasSize = Enum.AutomaticSize.Y,
-						ScrollBarThickness = 6,
-					}, {}, cards)),
-				})),
+					}, {}, {
+						Heading = e(
+							HTML.H1,
+							{
+								Text = "Native UI. Familiar tags.",
+								Position = UDim2.fromOffset(24, 24),
+								Size = UDim2.new(1, -48, 0, 44),
+							} :: HTML.TextProperties
+						),
+						Description = e(
+							HTML.P,
+							{
+								Text = `{visible} of {#HTML.Catalog} components · contextual CSS · typed Roblox roots`,
+								Position = UDim2.fromOffset(24, 72),
+								Size = UDim2.new(1, -48, 0, 24),
+							} :: HTML.TextProperties
+						),
+						Search = e(
+							HTML.Input,
+							{
+								Placeholder = "Find a tag…",
+								Value = query,
+								OnInput = setQuery,
+								Position = UDim2.fromOffset(24, 112),
+								Size = UDim2.new(1, -48, 0, 40),
+								CSS = { BorderRadius = 8 },
+							} :: HTML.InputProperties
+						),
+						Gallery = e(RobloxComponents.ScrollingFrame({
+							Position = UDim2.fromOffset(24, 176),
+							Size = UDim2.new(1, -32, 1, -176),
+							BackgroundTransparency = 1,
+							BorderSizePixel = 0,
+							CanvasSize = UDim2.new(),
+							AutomaticCanvasSize = Enum.AutomaticSize.Y,
+							ScrollBarThickness = 6,
+						}, {}, cards)),
+					})),
 			}
 		)
 	)

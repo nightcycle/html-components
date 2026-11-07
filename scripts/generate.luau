@@ -34,6 +34,7 @@ local header = {
 	"local CSS = require(script.CSS)",
 	"local Catalog = require(script.Catalog)",
 	"local Markup = require(script.Markup)",
+	"local Document = require(script.Document)",
 	"-- Components",
 	"local StyleProvider = require(script.React.Component.StyleProvider)",
 	"local Content = require(script.React.Component.Content)",
@@ -145,7 +146,7 @@ table.insert(header, "export type ContentProperties = Content.Properties")
 table.insert(header, "-- Constants\n-- Variables\n-- References\n-- Private Functions\n-- Class\nreturn table.freeze({")
 table.insert(
 	header,
-	"\tCSS = CSS,\n\tStyleProvider = StyleProvider,\n\tCatalog = Catalog,\n\tMarkup = Markup,\n\tContent = Content,"
+	"\tCSS = CSS,\n\tStyleProvider = StyleProvider,\n\tCatalog = Catalog,\n\tMarkup = Markup,\n\tDocument = Document,\n\tContent = Content,"
 )
 for _, name in names do
 	table.insert(header, name)
@@ -168,6 +169,9 @@ table.insert(
 	HTML.Content(content)
 	local parsed: HTML.MarkupResult = HTML.Markup.parse("<strong>Text</strong>")
 	assert(parsed.Success)
+	local document: HTML.DocumentResult = HTML.Document.parse("<!doctype html><title>Document</title><p>Text")
+	local styles: { HTML.DocumentStyleSource } = HTML.Document.stylesheets(document)
+	assert(#styles == 0)
 end]]
 )
 write("src/init.luau", table.concat(header, "\n") .. "\n")

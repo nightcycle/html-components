@@ -7,6 +7,7 @@ run("lune", { "run", "tests/run" })
 run("lune", { "run", "tests/style-updates" })
 run("lune", { "run", "tests/flow" })
 run("lune", { "run", "tests/markup" })
+run("lune", { "run", "tests/document" })
 run("lune", { "run", "tests/release" })
 run("stylua", { "--check", "src", "stories", "demo", "scripts", "tests" })
 run("luau-lsp", {
@@ -18,6 +19,7 @@ run("luau-lsp", {
 	"tests/style-updates.luau",
 	"tests/flow.luau",
 	"tests/markup.luau",
+	"tests/document.luau",
 	"tests/release.luau",
 	"tests/load.luau",
 	"tests/Datatypes.luau",

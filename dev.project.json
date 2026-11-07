@@ -7,6 +7,8 @@
       "DevPackages": { "$path": "DevPackages" },
       "Stories": { "$path": "stories" },
       "Demo": { "$path": "demo/App.luau" },
+      "DocumentDemo": { "$path": "demo/Document" },
+      "LocalDocumentFixture": { "$path": "demo/LocalDocumentFixture.luau" },
       "Tests": { "$path": "tests/roblox" },
       "VisualFixtures": { "$path": "tests/visual/Fixtures.luau" },
       "FlowFixtures": { "$path": "tests/visual/FlowFixtures.luau" },

@@ -1,0 +1,1863 @@
+[
+  {
+    "Name": "Empty document",
+    "Source": "",
+    "Expected": [
+      {
+        "Kind": "Element",
+        "Name": "html",
+        "Namespace": "HTML",
+        "Attributes": {},
+        "Children": [
+          {
+            "Kind": "Element",
+            "Name": "head",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": []
+          },
+          {
+            "Kind": "Element",
+            "Name": "body",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "Name": "Implicit structure",
+    "Source": "<title>Page &amp; title</title><p>Hello <strong>world</strong>!",
+    "Expected": [
+      {
+        "Kind": "Element",
+        "Name": "html",
+        "Namespace": "HTML",
+        "Attributes": {},
+        "Children": [
+          {
+            "Kind": "Element",
+            "Name": "head",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": [
+              {
+                "Kind": "Element",
+                "Name": "title",
+                "Namespace": "HTML",
+                "Attributes": {},
+                "Children": [
+                  {
+                    "Kind": "Text",
+                    "Text": "Page & title"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "Kind": "Element",
+            "Name": "body",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": [
+              {
+                "Kind": "Element",
+                "Name": "p",
+                "Namespace": "HTML",
+                "Attributes": {},
+                "Children": [
+                  {
+                    "Kind": "Text",
+                    "Text": "Hello "
+                  },
+                  {
+                    "Kind": "Element",
+                    "Name": "strong",
+                    "Namespace": "HTML",
+                    "Attributes": {},
+                    "Children": [
+                      {
+                        "Kind": "Text",
+                        "Text": "world"
+                      }
+                    ]
+                  },
+                  {
+                    "Kind": "Text",
+                    "Text": "!"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "Name": "Document whitespace and comments",
+    "Source": " \n<!--before--><!DOCTYPE html>\n<html lang=en>\n<head><meta charset=utf-8><title>T</title></head>\n<body>one<!--inside--></body><!--after body--></html><!--after html-->\n",
+    "Expected": [
+      {
+        "Kind": "Comment",
+        "Text": "before"
+      },
+      {
+        "Kind": "Doctype",
+        "Name": "html"
+      },
+      {
+        "Kind": "Element",
+        "Name": "html",
+        "Namespace": "HTML",
+        "Attributes": {
+          "lang": "en"
+        },
+        "Children": [
+          {
+            "Kind": "Element",
+            "Name": "head",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": [
+              {
+                "Kind": "Element",
+                "Name": "meta",
+                "Namespace": "HTML",
+                "Attributes": {
+                  "charset": "utf-8"
+                },
+                "Children": []
+              },
+              {
+                "Kind": "Element",
+                "Name": "title",
+                "Namespace": "HTML",
+                "Attributes": {},
+                "Children": [
+                  {
+                    "Kind": "Text",
+                    "Text": "T"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "Kind": "Text",
+            "Text": "\n"
+          },
+          {
+            "Kind": "Element",
+            "Name": "body",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": [
+              {
+                "Kind": "Text",
+                "Text": "one"
+              },
+              {
+                "Kind": "Comment",
+                "Text": "inside"
+              },
+              {
+                "Kind": "Text",
+                "Text": "\n"
+              }
+            ]
+          },
+          {
+            "Kind": "Comment",
+            "Text": "after body"
+          }
+        ]
+      },
+      {
+        "Kind": "Comment",
+        "Text": "after html"
+      }
+    ]
+  },
+  {
+    "Name": "Attributes and HTML voids",
+    "Source": "<INPUT disabled value='a>b' data-count=3 checked><br><img src=image.png/><hr/><div data-test=one/two>after</div>",
+    "Expected": [
+      {
+        "Kind": "Element",
+        "Name": "html",
+        "Namespace": "HTML",
+        "Attributes": {},
+        "Children": [
+          {
+            "Kind": "Element",
+            "Name": "head",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": []
+          },
+          {
+            "Kind": "Element",
+            "Name": "body",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": [
+              {
+                "Kind": "Element",
+                "Name": "input",
+                "Namespace": "HTML",
+                "Attributes": {
+                  "disabled": "",
+                  "value": "a>b",
+                  "data-count": "3",
+                  "checked": ""
+                },
+                "Children": []
+              },
+              {
+                "Kind": "Element",
+                "Name": "br",
+                "Namespace": "HTML",
+                "Attributes": {},
+                "Children": []
+              },
+              {
+                "Kind": "Element",
+                "Name": "img",
+                "Namespace": "HTML",
+                "Attributes": {
+                  "src": "image.png/"
+                },
+                "Children": []
+              },
+              {
+                "Kind": "Element",
+                "Name": "hr",
+                "Namespace": "HTML",
+                "Attributes": {},
+                "Children": []
+              },
+              {
+                "Kind": "Element",
+                "Name": "div",
+                "Namespace": "HTML",
+                "Attributes": {
+                  "data-test": "one/two"
+                },
+                "Children": [
+                  {
+                    "Kind": "Text",
+                    "Text": "after"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "Name": "First duplicate attribute wins",
+    "Source": "<p ID=first id=second CLASS='A'>hello</p>",
+    "Expected": [
+      {
+        "Kind": "Element",
+        "Name": "html",
+        "Namespace": "HTML",
+        "Attributes": {},
+        "Children": [
+          {
+            "Kind": "Element",
+            "Name": "head",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": []
+          },
+          {
+            "Kind": "Element",
+            "Name": "body",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": [
+              {
+                "Kind": "Element",
+                "Name": "p",
+                "Namespace": "HTML",
+                "Attributes": {
+                  "id": "first",
+                  "class": "A"
+                },
+                "Children": [
+                  {
+                    "Kind": "Text",
+                    "Text": "hello"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "Name": "Nonvoid self-closing flag ignored",
+    "Source": "<div/>inside<p>next</p>",
+    "Expected": [
+      {
+        "Kind": "Element",
+        "Name": "html",
+        "Namespace": "HTML",
+        "Attributes": {},
+        "Children": [
+          {
+            "Kind": "Element",
+            "Name": "head",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": []
+          },
+          {
+            "Kind": "Element",
+            "Name": "body",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": [
+              {
+                "Kind": "Element",
+                "Name": "div",
+                "Namespace": "HTML",
+                "Attributes": {},
+                "Children": [
+                  {
+                    "Kind": "Text",
+                    "Text": "inside"
+                  },
+                  {
+                    "Kind": "Element",
+                    "Name": "p",
+                    "Namespace": "HTML",
+                    "Attributes": {},
+                    "Children": [
+                      {
+                        "Kind": "Text",
+                        "Text": "next"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "Name": "Paragraph block repair",
+    "Source": "<p>one<div>two</div>three</p><p>four<p>five",
+    "Expected": [
+      {
+        "Kind": "Element",
+        "Name": "html",
+        "Namespace": "HTML",
+        "Attributes": {},
+        "Children": [
+          {
+            "Kind": "Element",
+            "Name": "head",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": []
+          },
+          {
+            "Kind": "Element",
+            "Name": "body",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": [
+              {
+                "Kind": "Element",
+                "Name": "p",
+                "Namespace": "HTML",
+                "Attributes": {},
+                "Children": [
+                  {
+                    "Kind": "Text",
+                    "Text": "one"
+                  }
+                ]
+              },
+              {
+                "Kind": "Element",
+                "Name": "div",
+                "Namespace": "HTML",
+                "Attributes": {},
+                "Children": [
+                  {
+                    "Kind": "Text",
+                    "Text": "two"
+                  }
+                ]
+              },
+              {
+                "Kind": "Text",
+                "Text": "three"
+              },
+              {
+                "Kind": "Element",
+                "Name": "p",
+                "Namespace": "HTML",
+                "Attributes": {},
+                "Children": []
+              },
+              {
+                "Kind": "Element",
+                "Name": "p",
+                "Namespace": "HTML",
+                "Attributes": {},
+                "Children": [
+                  {
+                    "Kind": "Text",
+                    "Text": "four"
+                  }
+                ]
+              },
+              {
+                "Kind": "Element",
+                "Name": "p",
+                "Namespace": "HTML",
+                "Attributes": {},
+                "Children": [
+                  {
+                    "Kind": "Text",
+                    "Text": "five"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "Name": "Optional list and definition closings",
+    "Source": "<ul><li>one<li>two<ul><li>nested</ul><li>three</ul><dl><dt>term<dd>definition<dt>next</dl>",
+    "Expected": [
+      {
+        "Kind": "Element",
+        "Name": "html",
+        "Namespace": "HTML",
+        "Attributes": {},
+        "Children": [
+          {
+            "Kind": "Element",
+            "Name": "head",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": []
+          },
+          {
+            "Kind": "Element",
+            "Name": "body",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": [
+              {
+                "Kind": "Element",
+                "Name": "ul",
+                "Namespace": "HTML",
+                "Attributes": {},
+                "Children": [
+                  {
+                    "Kind": "Element",
+                    "Name": "li",
+                    "Namespace": "HTML",
+                    "Attributes": {},
+                    "Children": [
+                      {
+                        "Kind": "Text",
+                        "Text": "one"
+                      }
+                    ]
+                  },
+                  {
+                    "Kind": "Element",
+                    "Name": "li",
+                    "Namespace": "HTML",
+                    "Attributes": {},
+                    "Children": [
+                      {
+                        "Kind": "Text",
+                        "Text": "two"
+                      },
+                      {
+                        "Kind": "Element",
+                        "Name": "ul",
+                        "Namespace": "HTML",
+                        "Attributes": {},
+                        "Children": [
+                          {
+                            "Kind": "Element",
+                            "Name": "li",
+                            "Namespace": "HTML",
+                            "Attributes": {},
+                            "Children": [
+                              {
+                                "Kind": "Text",
+                                "Text": "nested"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "Kind": "Element",
+                    "Name": "li",
+                    "Namespace": "HTML",
+                    "Attributes": {},
+                    "Children": [
+                      {
+                        "Kind": "Text",
+                        "Text": "three"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "Kind": "Element",
+                "Name": "dl",
+                "Namespace": "HTML",
+                "Attributes": {},
+                "Children": [
+                  {
+                    "Kind": "Element",
+                    "Name": "dt",
+                    "Namespace": "HTML",
+                    "Attributes": {},
+                    "Children": [
+                      {
+                        "Kind": "Text",
+                        "Text": "term"
+                      }
+                    ]
+                  },
+                  {
+                    "Kind": "Element",
+                    "Name": "dd",
+                    "Namespace": "HTML",
+                    "Attributes": {},
+                    "Children": [
+                      {
+                        "Kind": "Text",
+                        "Text": "definition"
+                      }
+                    ]
+                  },
+                  {
+                    "Kind": "Element",
+                    "Name": "dt",
+                    "Namespace": "HTML",
+                    "Attributes": {},
+                    "Children": [
+                      {
+                        "Kind": "Text",
+                        "Text": "next"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "Name": "Heading repair",
+    "Source": "<h1>first<h2>second</h2><p>end",
+    "Expected": [
+      {
+        "Kind": "Element",
+        "Name": "html",
+        "Namespace": "HTML",
+        "Attributes": {},
+        "Children": [
+          {
+            "Kind": "Element",
+            "Name": "head",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": []
+          },
+          {
+            "Kind": "Element",
+            "Name": "body",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": [
+              {
+                "Kind": "Element",
+                "Name": "h1",
+                "Namespace": "HTML",
+                "Attributes": {},
+                "Children": [
+                  {
+                    "Kind": "Text",
+                    "Text": "first"
+                  }
+                ]
+              },
+              {
+                "Kind": "Element",
+                "Name": "h2",
+                "Namespace": "HTML",
+                "Attributes": {},
+                "Children": [
+                  {
+                    "Kind": "Text",
+                    "Text": "second"
+                  }
+                ]
+              },
+              {
+                "Kind": "Element",
+                "Name": "p",
+                "Namespace": "HTML",
+                "Attributes": {},
+                "Children": [
+                  {
+                    "Kind": "Text",
+                    "Text": "end"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "Name": "Select optional closings",
+    "Source": "<select><optgroup label=First><option>A<option>B<optgroup label=Second><option>C</select>",
+    "Expected": [
+      {
+        "Kind": "Element",
+        "Name": "html",
+        "Namespace": "HTML",
+        "Attributes": {},
+        "Children": [
+          {
+            "Kind": "Element",
+            "Name": "head",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": []
+          },
+          {
+            "Kind": "Element",
+            "Name": "body",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": [
+              {
+                "Kind": "Element",
+                "Name": "select",
+                "Namespace": "HTML",
+                "Attributes": {},
+                "Children": [
+                  {
+                    "Kind": "Element",
+                    "Name": "optgroup",
+                    "Namespace": "HTML",
+                    "Attributes": {
+                      "label": "First"
+                    },
+                    "Children": [
+                      {
+                        "Kind": "Element",
+                        "Name": "option",
+                        "Namespace": "HTML",
+                        "Attributes": {},
+                        "Children": [
+                          {
+                            "Kind": "Text",
+                            "Text": "A"
+                          }
+                        ]
+                      },
+                      {
+                        "Kind": "Element",
+                        "Name": "option",
+                        "Namespace": "HTML",
+                        "Attributes": {},
+                        "Children": [
+                          {
+                            "Kind": "Text",
+                            "Text": "B"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "Kind": "Element",
+                    "Name": "optgroup",
+                    "Namespace": "HTML",
+                    "Attributes": {
+                      "label": "Second"
+                    },
+                    "Children": [
+                      {
+                        "Kind": "Element",
+                        "Name": "option",
+                        "Namespace": "HTML",
+                        "Attributes": {},
+                        "Children": [
+                          {
+                            "Kind": "Text",
+                            "Text": "C"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "Name": "Raw CSS and JavaScript",
+    "Source": "<style>.a::before {content:'< &amp; >'}</style><script>if (a < b) { x = '&amp;'; }</script><p>after",
+    "Expected": [
+      {
+        "Kind": "Element",
+        "Name": "html",
+        "Namespace": "HTML",
+        "Attributes": {},
+        "Children": [
+          {
+            "Kind": "Element",
+            "Name": "head",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": [
+              {
+                "Kind": "Element",
+                "Name": "style",
+                "Namespace": "HTML",
+                "Attributes": {},
+                "Children": [
+                  {
+                    "Kind": "Text",
+                    "Text": ".a::before {content:'< &amp; >'}"
+                  }
+                ]
+              },
+              {
+                "Kind": "Element",
+                "Name": "script",
+                "Namespace": "HTML",
+                "Attributes": {},
+                "Children": [
+                  {
+                    "Kind": "Text",
+                    "Text": "if (a < b) { x = '&amp;'; }"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "Kind": "Element",
+            "Name": "body",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": [
+              {
+                "Kind": "Element",
+                "Name": "p",
+                "Namespace": "HTML",
+                "Attributes": {},
+                "Children": [
+                  {
+                    "Kind": "Text",
+                    "Text": "after"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "Name": "RCDATA and first newline",
+    "Source": "<title>&copy; <b>text</b></title><textarea>\n&lt;b&gt; &amp;</textarea><pre>\nfirst\nsecond</pre>",
+    "Expected": [
+      {
+        "Kind": "Element",
+        "Name": "html",
+        "Namespace": "HTML",
+        "Attributes": {},
+        "Children": [
+          {
+            "Kind": "Element",
+            "Name": "head",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": [
+              {
+                "Kind": "Element",
+                "Name": "title",
+                "Namespace": "HTML",
+                "Attributes": {},
+                "Children": [
+                  {
+                    "Kind": "Text",
+                    "Text": "© <b>text</b>"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "Kind": "Element",
+            "Name": "body",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": [
+              {
+                "Kind": "Element",
+                "Name": "textarea",
+                "Namespace": "HTML",
+                "Attributes": {},
+                "Children": [
+                  {
+                    "Kind": "Text",
+                    "Text": "<b> &"
+                  }
+                ]
+              },
+              {
+                "Kind": "Element",
+                "Name": "pre",
+                "Namespace": "HTML",
+                "Attributes": {},
+                "Children": [
+                  {
+                    "Kind": "Text",
+                    "Text": "first\nsecond"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "Name": "Newline preprocessing precedes entities",
+    "Source": "<p title='a\r\nb&#13;c'>a\r\nb&#13;c\rd</p><textarea>\r\nx&#13;y</textarea><!--a\rb-->",
+    "Expected": [
+      {
+        "Kind": "Element",
+        "Name": "html",
+        "Namespace": "HTML",
+        "Attributes": {},
+        "Children": [
+          {
+            "Kind": "Element",
+            "Name": "head",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": []
+          },
+          {
+            "Kind": "Element",
+            "Name": "body",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": [
+              {
+                "Kind": "Element",
+                "Name": "p",
+                "Namespace": "HTML",
+                "Attributes": {
+                  "title": "a\nb\rc"
+                },
+                "Children": [
+                  {
+                    "Kind": "Text",
+                    "Text": "a\nb\rc\nd"
+                  }
+                ]
+              },
+              {
+                "Kind": "Element",
+                "Name": "textarea",
+                "Namespace": "HTML",
+                "Attributes": {},
+                "Children": [
+                  {
+                    "Kind": "Text",
+                    "Text": "x\ry"
+                  }
+                ]
+              },
+              {
+                "Kind": "Comment",
+                "Text": "a\nb"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "Name": "Named entities and ambiguous attribute references",
+    "Source": "<p title='&notit; &copyx &amp= &copy;'> &notit; &copyx &amp= &NotEqualTilde; &CounterClockwiseContourIntegral; &AMP; &amp;lt; &unknown;</p>",
+    "Expected": [
+      {
+        "Kind": "Element",
+        "Name": "html",
+        "Namespace": "HTML",
+        "Attributes": {},
+        "Children": [
+          {
+            "Kind": "Element",
+            "Name": "head",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": []
+          },
+          {
+            "Kind": "Element",
+            "Name": "body",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": [
+              {
+                "Kind": "Element",
+                "Name": "p",
+                "Namespace": "HTML",
+                "Attributes": {
+                  "title": "&notit; &copyx &amp= ©"
+                },
+                "Children": [
+                  {
+                    "Kind": "Text",
+                    "Text": " ¬it; ©x &= ≂̸ ∳ & &lt; &unknown;"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "Name": "Numeric character recovery",
+    "Source": "<p>&#0; &#xD800; &#1114112; &#128; &#x1f642; &#65 &#X41; &#13; &#x110000;</p>",
+    "Expected": [
+      {
+        "Kind": "Element",
+        "Name": "html",
+        "Namespace": "HTML",
+        "Attributes": {},
+        "Children": [
+          {
+            "Kind": "Element",
+            "Name": "head",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": []
+          },
+          {
+            "Kind": "Element",
+            "Name": "body",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": [
+              {
+                "Kind": "Element",
+                "Name": "p",
+                "Namespace": "HTML",
+                "Attributes": {},
+                "Children": [
+                  {
+                    "Kind": "Text",
+                    "Text": "� � � € 🙂 A A \r �"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "Name": "SVG case and namespace integration",
+    "Source": "<svg viewbox='0 0 20 20'><defs><lineargradient id=g gradientunits=userSpaceOnUse/></defs><path stroke-width=2 d='M0 0'/><foreignobject width=20 height=20><div>HTML <strong>text</strong></div></foreignobject></svg>",
+    "Expected": [
+      {
+        "Kind": "Element",
+        "Name": "html",
+        "Namespace": "HTML",
+        "Attributes": {},
+        "Children": [
+          {
+            "Kind": "Element",
+            "Name": "head",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": []
+          },
+          {
+            "Kind": "Element",
+            "Name": "body",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": [
+              {
+                "Kind": "Element",
+                "Name": "svg",
+                "Namespace": "SVG",
+                "Attributes": {
+                  "viewBox": "0 0 20 20"
+                },
+                "Children": [
+                  {
+                    "Kind": "Element",
+                    "Name": "defs",
+                    "Namespace": "SVG",
+                    "Attributes": {},
+                    "Children": [
+                      {
+                        "Kind": "Element",
+                        "Name": "linearGradient",
+                        "Namespace": "SVG",
+                        "Attributes": {
+                          "id": "g",
+                          "gradientUnits": "userSpaceOnUse/"
+                        },
+                        "Children": []
+                      }
+                    ]
+                  },
+                  {
+                    "Kind": "Element",
+                    "Name": "path",
+                    "Namespace": "SVG",
+                    "Attributes": {
+                      "stroke-width": "2",
+                      "d": "M0 0"
+                    },
+                    "Children": []
+                  },
+                  {
+                    "Kind": "Element",
+                    "Name": "foreignObject",
+                    "Namespace": "SVG",
+                    "Attributes": {
+                      "width": "20",
+                      "height": "20"
+                    },
+                    "Children": [
+                      {
+                        "Kind": "Element",
+                        "Name": "div",
+                        "Namespace": "HTML",
+                        "Attributes": {},
+                        "Children": [
+                          {
+                            "Kind": "Text",
+                            "Text": "HTML "
+                          },
+                          {
+                            "Kind": "Element",
+                            "Name": "strong",
+                            "Namespace": "HTML",
+                            "Attributes": {},
+                            "Children": [
+                              {
+                                "Kind": "Text",
+                                "Text": "text"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "Name": "Foreign CDATA",
+    "Source": "<svg><![CDATA[a < b & c]]><text>A&amp;B</text></svg>",
+    "Expected": [
+      {
+        "Kind": "Element",
+        "Name": "html",
+        "Namespace": "HTML",
+        "Attributes": {},
+        "Children": [
+          {
+            "Kind": "Element",
+            "Name": "head",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": []
+          },
+          {
+            "Kind": "Element",
+            "Name": "body",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": [
+              {
+                "Kind": "Element",
+                "Name": "svg",
+                "Namespace": "SVG",
+                "Attributes": {},
+                "Children": [
+                  {
+                    "Kind": "Text",
+                    "Text": "a < b & c"
+                  },
+                  {
+                    "Kind": "Element",
+                    "Name": "text",
+                    "Namespace": "SVG",
+                    "Attributes": {},
+                    "Children": [
+                      {
+                        "Kind": "Text",
+                        "Text": "A&B"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "Name": "MathML text integration",
+    "Source": "<math><mi>x</mi><mo>+</mo><mn>2</mn><mtext><b>bold</b></mtext><annotation-xml encoding='text/html'><div>HTML</div></annotation-xml></math>",
+    "Expected": [
+      {
+        "Kind": "Element",
+        "Name": "html",
+        "Namespace": "HTML",
+        "Attributes": {},
+        "Children": [
+          {
+            "Kind": "Element",
+            "Name": "head",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": []
+          },
+          {
+            "Kind": "Element",
+            "Name": "body",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": [
+              {
+                "Kind": "Element",
+                "Name": "math",
+                "Namespace": "MathML",
+                "Attributes": {},
+                "Children": [
+                  {
+                    "Kind": "Element",
+                    "Name": "mi",
+                    "Namespace": "MathML",
+                    "Attributes": {},
+                    "Children": [
+                      {
+                        "Kind": "Text",
+                        "Text": "x"
+                      }
+                    ]
+                  },
+                  {
+                    "Kind": "Element",
+                    "Name": "mo",
+                    "Namespace": "MathML",
+                    "Attributes": {},
+                    "Children": [
+                      {
+                        "Kind": "Text",
+                        "Text": "+"
+                      }
+                    ]
+                  },
+                  {
+                    "Kind": "Element",
+                    "Name": "mn",
+                    "Namespace": "MathML",
+                    "Attributes": {},
+                    "Children": [
+                      {
+                        "Kind": "Text",
+                        "Text": "2"
+                      }
+                    ]
+                  },
+                  {
+                    "Kind": "Element",
+                    "Name": "mtext",
+                    "Namespace": "MathML",
+                    "Attributes": {},
+                    "Children": [
+                      {
+                        "Kind": "Element",
+                        "Name": "b",
+                        "Namespace": "HTML",
+                        "Attributes": {},
+                        "Children": [
+                          {
+                            "Kind": "Text",
+                            "Text": "bold"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "Kind": "Element",
+                    "Name": "annotation-xml",
+                    "Namespace": "MathML",
+                    "Attributes": {
+                      "encoding": "text/html"
+                    },
+                    "Children": [
+                      {
+                        "Kind": "Element",
+                        "Name": "div",
+                        "Namespace": "HTML",
+                        "Attributes": {},
+                        "Children": [
+                          {
+                            "Kind": "Text",
+                            "Text": "HTML"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "Name": "Implicit table sections",
+    "Source": "<table><tr><td>A</td><td>B</td></tr></table><table><td>C</td></table>",
+    "Expected": [
+      {
+        "Kind": "Element",
+        "Name": "html",
+        "Namespace": "HTML",
+        "Attributes": {},
+        "Children": [
+          {
+            "Kind": "Element",
+            "Name": "head",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": []
+          },
+          {
+            "Kind": "Element",
+            "Name": "body",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": [
+              {
+                "Kind": "Element",
+                "Name": "table",
+                "Namespace": "HTML",
+                "Attributes": {},
+                "Children": [
+                  {
+                    "Kind": "Element",
+                    "Name": "tbody",
+                    "Namespace": "HTML",
+                    "Attributes": {},
+                    "Children": [
+                      {
+                        "Kind": "Element",
+                        "Name": "tr",
+                        "Namespace": "HTML",
+                        "Attributes": {},
+                        "Children": [
+                          {
+                            "Kind": "Element",
+                            "Name": "td",
+                            "Namespace": "HTML",
+                            "Attributes": {},
+                            "Children": [
+                              {
+                                "Kind": "Text",
+                                "Text": "A"
+                              }
+                            ]
+                          },
+                          {
+                            "Kind": "Element",
+                            "Name": "td",
+                            "Namespace": "HTML",
+                            "Attributes": {},
+                            "Children": [
+                              {
+                                "Kind": "Text",
+                                "Text": "B"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "Kind": "Element",
+                "Name": "table",
+                "Namespace": "HTML",
+                "Attributes": {},
+                "Children": [
+                  {
+                    "Kind": "Element",
+                    "Name": "tbody",
+                    "Namespace": "HTML",
+                    "Attributes": {},
+                    "Children": [
+                      {
+                        "Kind": "Element",
+                        "Name": "tr",
+                        "Namespace": "HTML",
+                        "Attributes": {},
+                        "Children": [
+                          {
+                            "Kind": "Element",
+                            "Name": "td",
+                            "Namespace": "HTML",
+                            "Attributes": {},
+                            "Children": [
+                              {
+                                "Kind": "Text",
+                                "Text": "C"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "Name": "Optional table cell and row closings",
+    "Source": "<table><thead><tr><th>Name<th>Value<tbody><tr><td>A<td>1<tr><td>B<td>2</table>",
+    "Expected": [
+      {
+        "Kind": "Element",
+        "Name": "html",
+        "Namespace": "HTML",
+        "Attributes": {},
+        "Children": [
+          {
+            "Kind": "Element",
+            "Name": "head",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": []
+          },
+          {
+            "Kind": "Element",
+            "Name": "body",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": [
+              {
+                "Kind": "Element",
+                "Name": "table",
+                "Namespace": "HTML",
+                "Attributes": {},
+                "Children": [
+                  {
+                    "Kind": "Element",
+                    "Name": "thead",
+                    "Namespace": "HTML",
+                    "Attributes": {},
+                    "Children": [
+                      {
+                        "Kind": "Element",
+                        "Name": "tr",
+                        "Namespace": "HTML",
+                        "Attributes": {},
+                        "Children": [
+                          {
+                            "Kind": "Element",
+                            "Name": "th",
+                            "Namespace": "HTML",
+                            "Attributes": {},
+                            "Children": [
+                              {
+                                "Kind": "Text",
+                                "Text": "Name"
+                              }
+                            ]
+                          },
+                          {
+                            "Kind": "Element",
+                            "Name": "th",
+                            "Namespace": "HTML",
+                            "Attributes": {},
+                            "Children": [
+                              {
+                                "Kind": "Text",
+                                "Text": "Value"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "Kind": "Element",
+                    "Name": "tbody",
+                    "Namespace": "HTML",
+                    "Attributes": {},
+                    "Children": [
+                      {
+                        "Kind": "Element",
+                        "Name": "tr",
+                        "Namespace": "HTML",
+                        "Attributes": {},
+                        "Children": [
+                          {
+                            "Kind": "Element",
+                            "Name": "td",
+                            "Namespace": "HTML",
+                            "Attributes": {},
+                            "Children": [
+                              {
+                                "Kind": "Text",
+                                "Text": "A"
+                              }
+                            ]
+                          },
+                          {
+                            "Kind": "Element",
+                            "Name": "td",
+                            "Namespace": "HTML",
+                            "Attributes": {},
+                            "Children": [
+                              {
+                                "Kind": "Text",
+                                "Text": "1"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "Kind": "Element",
+                        "Name": "tr",
+                        "Namespace": "HTML",
+                        "Attributes": {},
+                        "Children": [
+                          {
+                            "Kind": "Element",
+                            "Name": "td",
+                            "Namespace": "HTML",
+                            "Attributes": {},
+                            "Children": [
+                              {
+                                "Kind": "Text",
+                                "Text": "B"
+                              }
+                            ]
+                          },
+                          {
+                            "Kind": "Element",
+                            "Name": "td",
+                            "Namespace": "HTML",
+                            "Attributes": {},
+                            "Children": [
+                              {
+                                "Kind": "Text",
+                                "Text": "2"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "Name": "Document and body attribute merging",
+    "Source": "<html lang=en><head></head><body class=First><html dir=ltr><body class=Second id=Main><p>text</p></body></html>",
+    "Expected": [
+      {
+        "Kind": "Element",
+        "Name": "html",
+        "Namespace": "HTML",
+        "Attributes": {
+          "lang": "en",
+          "dir": "ltr"
+        },
+        "Children": [
+          {
+            "Kind": "Element",
+            "Name": "head",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": []
+          },
+          {
+            "Kind": "Element",
+            "Name": "body",
+            "Namespace": "HTML",
+            "Attributes": {
+              "class": "First",
+              "id": "Main"
+            },
+            "Children": [
+              {
+                "Kind": "Element",
+                "Name": "p",
+                "Namespace": "HTML",
+                "Attributes": {},
+                "Children": [
+                  {
+                    "Kind": "Text",
+                    "Text": "text"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "Name": "Bogus declaration becomes comment",
+    "Source": "<!DOCTYPE html><!other data><p>text<!other data></p>",
+    "Expected": [
+      {
+        "Kind": "Doctype",
+        "Name": "html"
+      },
+      {
+        "Kind": "Comment",
+        "Text": "other data"
+      },
+      {
+        "Kind": "Element",
+        "Name": "html",
+        "Namespace": "HTML",
+        "Attributes": {},
+        "Children": [
+          {
+            "Kind": "Element",
+            "Name": "head",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": []
+          },
+          {
+            "Kind": "Element",
+            "Name": "body",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": [
+              {
+                "Kind": "Element",
+                "Name": "p",
+                "Namespace": "HTML",
+                "Attributes": {},
+                "Children": [
+                  {
+                    "Kind": "Text",
+                    "Text": "text"
+                  },
+                  {
+                    "Kind": "Comment",
+                    "Text": "other data"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "Name": "Unclosed attributes discarded at EOF",
+    "Source": "<p>before<img src='unfinished",
+    "Expected": [
+      {
+        "Kind": "Element",
+        "Name": "html",
+        "Namespace": "HTML",
+        "Attributes": {},
+        "Children": [
+          {
+            "Kind": "Element",
+            "Name": "head",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": []
+          },
+          {
+            "Kind": "Element",
+            "Name": "body",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": [
+              {
+                "Kind": "Element",
+                "Name": "p",
+                "Namespace": "HTML",
+                "Attributes": {},
+                "Children": [
+                  {
+                    "Kind": "Text",
+                    "Text": "before"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "Name": "Raw-text closing delimiter",
+    "Source": "<script>let x = '</scripted>'; let y = '<div>';</SCRIPT ><p>after",
+    "Expected": [
+      {
+        "Kind": "Element",
+        "Name": "html",
+        "Namespace": "HTML",
+        "Attributes": {},
+        "Children": [
+          {
+            "Kind": "Element",
+            "Name": "head",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": [
+              {
+                "Kind": "Element",
+                "Name": "script",
+                "Namespace": "HTML",
+                "Attributes": {},
+                "Children": [
+                  {
+                    "Kind": "Text",
+                    "Text": "let x = '</scripted>'; let y = '<div>';"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "Kind": "Element",
+            "Name": "body",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": [
+              {
+                "Kind": "Element",
+                "Name": "p",
+                "Namespace": "HTML",
+                "Attributes": {},
+                "Children": [
+                  {
+                    "Kind": "Text",
+                    "Text": "after"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "Name": "Custom elements and attribute collisions",
+    "Source": "<my-widget data-item=A data_item=B aria-label='Example'><custom-child>text</custom-child></my-widget>",
+    "Expected": [
+      {
+        "Kind": "Element",
+        "Name": "html",
+        "Namespace": "HTML",
+        "Attributes": {},
+        "Children": [
+          {
+            "Kind": "Element",
+            "Name": "head",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": []
+          },
+          {
+            "Kind": "Element",
+            "Name": "body",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": [
+              {
+                "Kind": "Element",
+                "Name": "my-widget",
+                "Namespace": "HTML",
+                "Attributes": {
+                  "data-item": "A",
+                  "data_item": "B",
+                  "aria-label": "Example"
+                },
+                "Children": [
+                  {
+                    "Kind": "Element",
+                    "Name": "custom-child",
+                    "Namespace": "HTML",
+                    "Attributes": {},
+                    "Children": [
+                      {
+                        "Kind": "Text",
+                        "Text": "text"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "Name": "Nested form is ignored",
+    "Source": "<form id=Outer><input><form id=Inner><input></form><p>after</p>",
+    "Expected": [
+      {
+        "Kind": "Element",
+        "Name": "html",
+        "Namespace": "HTML",
+        "Attributes": {},
+        "Children": [
+          {
+            "Kind": "Element",
+            "Name": "head",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": []
+          },
+          {
+            "Kind": "Element",
+            "Name": "body",
+            "Namespace": "HTML",
+            "Attributes": {},
+            "Children": [
+              {
+                "Kind": "Element",
+                "Name": "form",
+                "Namespace": "HTML",
+                "Attributes": {
+                  "id": "Outer"
+                },
+                "Children": [
+                  {
+                    "Kind": "Element",
+                    "Name": "input",
+                    "Namespace": "HTML",
+                    "Attributes": {},
+                    "Children": []
+                  },
+                  {
+                    "Kind": "Element",
+                    "Name": "input",
+                    "Namespace": "HTML",
+                    "Attributes": {},
+                    "Children": []
+                  }
+                ]
+              },
+              {
+                "Kind": "Element",
+                "Name": "p",
+                "Namespace": "HTML",
+                "Attributes": {},
+                "Children": [
+                  {
+                    "Kind": "Text",
+                    "Text": "after"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]
