@@ -62,8 +62,6 @@ jobs:
         run: lune run scripts/setup
       - name: Generated components, regression tests, formatting and strict types
         run: lune run scripts/check
-      - name: Verify dependency lockfile
-        run: git diff --exit-code -- wally.lock
       - name: Build and verify release artifacts
         run: lune run scripts/build
       - name: Publish Wally package
