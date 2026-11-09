@@ -203,10 +203,12 @@ local function intrinsic(entry: Entry, available: number): number
 		end
 		line = width
 	end
+	local flowCount = 0
 	for _, child in children(entry) do
 		if positioned(child) then
 			continue
 		end
+		flowCount += 1
 		local value = intrinsic(child, available)
 		local margin = insets(child.Input.Style, available, true)
 		value += margin.Left + margin.Right
@@ -225,7 +227,7 @@ local function intrinsic(entry: Entry, available: number): number
 	end
 	local padding = insets(style, available, false)
 	local gap = if flex(entry) and style.FlexDirection ~= "Column"
-		then math.max(0, #children(entry) - 1) * Metrics.length(style.Gap, available, 0)
+		then math.max(0, flowCount - 1) * Metrics.length(style.ColumnGap or style.Gap, available, 0)
 		else 0
 	return math.clamp(
 		math.ceil(math.max(width, line)) + padding.Left + padding.Right + gap,
@@ -234,7 +236,13 @@ local function intrinsic(entry: Entry, available: number): number
 	)
 end
 
-local function layout(entry: Entry, available: number, parentHeight: number, forcedWidth: number?): Box
+local function layout(
+	entry: Entry,
+	available: number,
+	parentHeight: number,
+	forcedWidth: number?,
+	forcedHeight: number?
+): Box
 	local style, native = entry.Input.Style, entry.Input.Size
 	local mode = display(entry)
 	local outerMargin = insets(style, available, true)
@@ -256,6 +264,31 @@ local function layout(entry: Entry, available: number, parentHeight: number, for
 	width = math.clamp(width, style.MinWidth or 0, math.max(style.MinWidth or 0, style.MaxWidth or math.huge))
 	local padding = insets(style, width, false)
 	local contentWidth = math.max(0, width - padding.Left - padding.Right)
+	local definiteHeight: number? = nil
+	if style.Height and style.Height ~= "Auto" and style.Height ~= "auto" then
+		definiteHeight = Metrics.length(style.Height, parentHeight, 0)
+	end
+	if
+		native
+		and entry.Input.AutomaticSize ~= Enum.AutomaticSize.Y
+		and entry.Input.AutomaticSize ~= Enum.AutomaticSize.XY
+	then
+		definiteHeight = native.Y.Scale * parentHeight + native.Y.Offset
+	end
+	if forcedHeight ~= nil then
+		definiteHeight = forcedHeight
+	end
+	if definiteHeight ~= nil then
+		definiteHeight = math.clamp(
+			definiteHeight,
+			style.MinHeight or 0,
+			math.max(style.MinHeight or 0, style.MaxHeight or math.huge)
+		)
+	end
+	local contentHeight = if definiteHeight ~= nil
+		then math.max(0, definiteHeight - padding.Top - padding.Bottom)
+		else nil
+	local childHeightBasis = contentHeight or parentHeight
 	local _, size = font(entry)
 	local glyphHeight, lineHeight, baseline, xHeight = Metrics.text(style, size)
 	local box: Box = { Entry = entry, X = 0, Y = 0, Width = width, Height = 0, Baseline = 0, Children = {}, Text = {} }
@@ -316,7 +349,7 @@ local function layout(entry: Entry, available: number, parentHeight: number, for
 				local ownWidth = if centered
 					then math.min(slot, intrinsic(child, slot))
 					else slot - inset.Left - inset.Right
-				local childBox = layout(child, slot, parentHeight, Metrics.length(ownStyle.Width, slot, ownWidth))
+				local childBox = layout(child, slot, childHeightBasis, Metrics.length(ownStyle.Width, slot, ownWidth))
 				local margin = margins(ownStyle, slot, childBox.Width)
 				margin.Bottom = math.max(margin.Bottom, childBox.CollapsedBottom or 0)
 				local autoMargin = ownStyle.MarginLeft == "Auto"
@@ -334,8 +367,70 @@ local function layout(entry: Entry, available: number, parentHeight: number, for
 				finish()
 			end
 			height = math.max(0, y - verticalGap)
+		elseif style.FlexDirection == "Column" then
+			local total, grow, shrink = math.max(0, #members - 1) * verticalGap, 0, 0
+			local measured: { Box } = {}
+			for index, child in members do
+				local ownStyle = child.Input.Style
+				local margin = insets(ownStyle, contentWidth, true)
+				local align = ownStyle.AlignSelf or style.AlignItems or "Stretch"
+				local autoWidth = not ownStyle.Width or ownStyle.Width == "Auto" or ownStyle.Width == "auto"
+				local ownWidth = if align == "Stretch"
+						and autoWidth
+						and not child.Input.Size
+					then contentWidth - margin.Left - margin.Right
+					else intrinsic(child, contentWidth)
+				local childBox = layout(child, contentWidth, childHeightBasis, math.max(0, ownWidth))
+				measured[index] = childBox
+				total += childBox.Height + margin.Top + margin.Bottom
+				grow += ownStyle.FlexGrow or 0
+				shrink += childBox.Height * (ownStyle.FlexShrink or 1)
+			end
+			-- Auto-height columns keep their intrinsic height. A min-height can
+			-- create positive free space, but never forces their contents to shrink.
+			local mainSize = contentHeight or math.max(total, (style.MinHeight or 0) - padding.Top - padding.Bottom)
+			local y = 0
+			for index, child in members do
+				local ownStyle = child.Input.Style
+				local margin = insets(ownStyle, contentWidth, true)
+				local childBox = measured[index]
+				local ownHeight = childBox.Height
+				if mainSize > total and grow > 0 then
+					ownHeight += (mainSize - total) * (ownStyle.FlexGrow or 0) / grow
+				elseif mainSize < total and shrink > 0 then
+					ownHeight -= (total - mainSize) * ownHeight * (ownStyle.FlexShrink or 1) / shrink
+				end
+				if ownHeight ~= childBox.Height or (ownStyle.FlexGrow or 0) > 0 then
+					childBox = layout(child, contentWidth, childHeightBasis, childBox.Width, math.max(0, ownHeight))
+				end
+				local align = ownStyle.AlignSelf or style.AlignItems
+				local crossSpace = contentWidth - childBox.Width - margin.Left - margin.Right
+				childBox.X = margin.Left
+					+ (if align == "Center" then crossSpace / 2 elseif align == "FlexEnd" then crossSpace else 0)
+				childBox.Y = y + margin.Top
+				y += childBox.Height + margin.Top + margin.Bottom + verticalGap
+				table.insert(box.Children, childBox)
+			end
+			height = math.max(0, y - verticalGap)
+			local extra = math.max(0, mainSize - height)
+			local offset = if style.JustifyContent == "Center"
+				then extra / 2
+				elseif style.JustifyContent == "FlexEnd" then extra
+				else 0
+			local between = if style.JustifyContent == "SpaceBetween" and #members > 1
+				then extra / (#members - 1)
+				else 0
+			if style.JustifyContent == "SpaceEvenly" then
+				between = extra / (#members + 1)
+				offset = between
+			elseif style.JustifyContent == "SpaceAround" and #members > 0 then
+				between = extra / #members
+				offset = between / 2
+			end
+			for index, child in box.Children do
+				child.Y += offset + (index - 1) * between
+			end
 		else
-			local horizontal = style.FlexDirection ~= "Column"
 			local base: { number } = {}
 			local total, shrink, grow = math.max(0, #members - 1) * horizontalGap, 0, 0
 			for index, child in members do
@@ -379,17 +474,36 @@ local function layout(entry: Entry, available: number, parentHeight: number, for
 					end
 				end
 				rowHeight = math.max(rowHeight, rowBaseline + descent)
+				if style.FlexWrap ~= "Wrap" then
+					rowHeight = contentHeight
+						or math.max(rowHeight, (style.MinHeight or 0) - padding.Top - padding.Bottom)
+				end
 				for index, child in row do
 					child.X += offset + (index - 1) * between
-					local align = child.Entry.Input.Style.AlignSelf or style.AlignItems or "Stretch"
+					local ownStyle = child.Entry.Input.Style
+					local margin = insets(ownStyle, contentWidth, true)
+					local remaining = rowHeight - child.Height - margin.Top - margin.Bottom
+					local align = ownStyle.AlignSelf or style.AlignItems or "Stretch"
 					if align == "Baseline" then
 						child.Y = y + rowBaseline - child.Baseline
 					elseif align == "Center" then
-						child.Y += (rowHeight - child.Height) / 2
+						child.Y += remaining / 2
 					elseif align == "FlexEnd" then
-						child.Y += rowHeight - child.Height
-					elseif align == "Stretch" and not child.Entry.Input.Style.Height then
-						child.Height = rowHeight
+						child.Y += remaining
+					elseif
+						align == "Stretch"
+						and (not ownStyle.Height or ownStyle.Height == "Auto" or ownStyle.Height == "auto")
+						and not child.Entry.Input.Size
+					then
+						local stretched = layout(
+							child.Entry,
+							contentWidth,
+							childHeightBasis,
+							child.Width,
+							math.max(0, rowHeight - margin.Top - margin.Bottom)
+						)
+						child.Height, child.Children, child.Text, child.Baseline =
+							stretched.Height, stretched.Children, stretched.Text, stretched.Baseline
 					end
 					if index == 1 and box.Baseline == 0 then
 						box.Baseline = child.Y + child.Baseline + padding.Top
@@ -403,46 +517,29 @@ local function layout(entry: Entry, available: number, parentHeight: number, for
 				local ownStyle = child.Input.Style
 				local margin = insets(ownStyle, contentWidth, true)
 				local ownWidth = base[index]
-				if horizontal and style.FlexWrap ~= "Wrap" then
+				if style.FlexWrap ~= "Wrap" then
 					if total > contentWidth and shrink > 0 then
 						ownWidth -= (total - contentWidth) * base[index] * (ownStyle.FlexShrink or 1) / shrink
 					elseif total < contentWidth and grow > 0 then
 						ownWidth += (contentWidth - total) * (ownStyle.FlexGrow or 0) / grow
 					end
-				elseif not horizontal then
-					local align = ownStyle.AlignSelf or style.AlignItems or "Stretch"
-					if align == "Stretch" and not ownStyle.Width then
-						ownWidth = contentWidth - margin.Left - margin.Right
-					end
 				end
-				local childBox = layout(child, contentWidth, parentHeight, math.max(0, ownWidth))
+				local childBox = layout(child, contentWidth, childHeightBasis, math.max(0, ownWidth))
 				margin.Bottom = math.max(margin.Bottom, childBox.CollapsedBottom or 0)
-				if horizontal then
-					if
-						style.FlexWrap == "Wrap"
-						and x > 0
-						and x + childBox.Width + margin.Left + margin.Right > contentWidth
-					then
-						finish()
-					end
-					childBox.X, childBox.Y = x + margin.Left, y + margin.Top
-					x += childBox.Width + margin.Left + margin.Right + horizontalGap
-					rowHeight = math.max(rowHeight, childBox.Height + margin.Top + margin.Bottom)
-					table.insert(row, childBox)
-				else
-					local align = ownStyle.AlignSelf or style.AlignItems
-					childBox.X = if align == "Center"
-						then (contentWidth - childBox.Width) / 2
-						elseif align == "FlexEnd" then contentWidth - childBox.Width
-						else margin.Left
-					childBox.Y = y + margin.Top
-					y += childBox.Height + margin.Top + margin.Bottom + verticalGap
+				if
+					style.FlexWrap == "Wrap"
+					and x > 0
+					and x + childBox.Width + margin.Left + margin.Right > contentWidth
+				then
+					finish()
 				end
+				childBox.X, childBox.Y = x + margin.Left, y + margin.Top
+				x += childBox.Width + margin.Left + margin.Right + horizontalGap
+				rowHeight = math.max(rowHeight, childBox.Height + margin.Top + margin.Bottom)
+				table.insert(row, childBox)
 				table.insert(box.Children, childBox)
 			end
-			if horizontal then
-				finish()
-			end
+			finish()
 			height = math.max(0, y - verticalGap)
 		end
 	else
@@ -486,7 +583,7 @@ local function layout(entry: Entry, available: number, parentHeight: number, for
 				local isInline = childMode == "Inline" and child.Input.Layout
 				local childBox: Box = if isInline
 					then { Entry = child, X = 0, Y = 0, Width = 0, Height = 0, Baseline = 0, Children = {}, Text = {} }
-					else layout(child, contentWidth, parentHeight)
+					else layout(child, contentWidth, childHeightBasis)
 				table.insert(parent.Children, childBox)
 				parents[childBox] = parent
 				if isInline then
@@ -617,34 +714,44 @@ local function layout(entry: Entry, available: number, parentHeight: number, for
 		end
 	end
 	height += padding.Top + padding.Bottom
-	if style.Height and style.Height ~= "Auto" and style.Height ~= "auto" then
-		height = Metrics.length(style.Height, parentHeight, height)
-	end
-	if native then
-		local automatic = entry.Input.AutomaticSize
-		if automatic ~= Enum.AutomaticSize.Y and automatic ~= Enum.AutomaticSize.XY then
-			height = native.Y.Scale * parentHeight + native.Y.Offset
-		end
+	if definiteHeight ~= nil then
+		height = definiteHeight
 	end
 	box.Height = math.clamp(height, style.MinHeight or 0, math.max(style.MinHeight or 0, style.MaxHeight or math.huge))
 	for _, child in children(entry) do
 		if positioned(child) then
-			local childBox = layout(child, contentWidth, box.Height)
 			local ownStyle = child.Input.Style
+			-- Positioned boxes use the padding box as their containing block.
+			-- Native UIPadding still offsets descendants, so cancel that offset.
+			local border = style.BorderWidth or 0
+			local containingWidth = math.max(0, width - border * 2)
+			local containingHeight = math.max(0, box.Height - border * 2)
+			local autoWidth = not ownStyle.Width or ownStyle.Width == "Auto" or ownStyle.Width == "auto"
+			local positionedWidth = if autoWidth and not child.Input.Size
+				then (if ownStyle.Left and ownStyle.Right
+					then math.max(
+						0,
+						containingWidth
+							- Metrics.length(ownStyle.Left, containingWidth, 0)
+							- Metrics.length(ownStyle.Right, containingWidth, 0)
+					)
+					else math.min(containingWidth, intrinsic(child, containingWidth)))
+				else nil
+			local childBox = layout(child, containingWidth, containingHeight, positionedWidth)
 			childBox.X = Metrics.length(
 				ownStyle.Left,
-				contentWidth,
+				containingWidth,
 				if ownStyle.Right
-					then contentWidth - Metrics.length(ownStyle.Right, contentWidth, 0) - childBox.Width
+					then containingWidth - Metrics.length(ownStyle.Right, containingWidth, 0) - childBox.Width
 					else 0
-			)
+			) - padding.Left + border
 			childBox.Y = Metrics.length(
 				ownStyle.Top,
-				box.Height,
+				containingHeight,
 				if ownStyle.Bottom
-					then box.Height - Metrics.length(ownStyle.Bottom, box.Height, 0) - childBox.Height
+					then containingHeight - Metrics.length(ownStyle.Bottom, containingHeight, 0) - childBox.Height
 					else 0
-			)
+			) - padding.Top + border
 			table.insert(box.Children, childBox)
 		end
 	end
